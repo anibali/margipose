@@ -1,0 +1,130 @@
+{
+    "S1/Seq1": {
+        "bg_augmentable": 1,
+        "ub_augmentable": 0,
+        "lb_augmentable": 0,
+        "chair_augmentable": 1,
+        "fps": 25,
+        "num_frames": 6416
+    },
+    "S1/Seq2": {
+        "bg_augmentable": 0,
+        "ub_augmentable": 1,
+        "lb_augmentable": 0,
+        "chair_augmentable": 1,
+        "fps": 50,
+        "num_frames": 12430
+    },
+    "S2/Seq1": {
+        "bg_augmentable": 1,
+        "ub_augmentable": 0,
+        "lb_augmentable": 0,
+        "chair_augmentable": 1,
+        "fps": 25,
+        "num_frames": 6502
+    },
+    "S2/Seq2": {
+        "bg_augmentable": 1,
+        "ub_augmentable": 1,
+        "lb_augmentable": 1,
+        "chair_augmentable": 1,
+        "fps": 25,
+        "num_frames": 6081
+    },
+    "S3/Seq1": {
+        "bg_augmentable": 1,
+        "ub_augmentable": 0,
+        "lb_augmentable": 0,
+        "chair_augmentable": 1,
+        "fps": 50,
+        "num_frames": 12488
+    },
+    "S3/Seq2": {
+        "bg_augmentable": 1,
+        "ub_augmentable": 1,
+        "lb_augmentable": 1,
+        "chair_augmentable": 1,
+        "fps": 50,
+        "num_frames": 12283
+    },
+    "S4/Seq1": {
+        "bg_augmentable": 1,
+        "ub_augmentable": 0,
+        "lb_augmentable": 0,
+        "chair_augmentable": 1,
+        "fps": 25,
+        "num_frames": 6171
+    },
+    "S4/Seq2": {
+        "bg_augmentable": 0,
+        "ub_augmentable": 1,
+        "lb_augmentable": 0,
+        "chair_augmentable": 1,
+        "fps": 25,
+        "num_frames": 6675
+    },
+    "S5/Seq1": {
+        "bg_augmentable": 1,
+        "ub_augmentable": 0,
+        "lb_augmentable": 0,
+        "chair_augmentable": 1,
+        "fps": 50,
+        "num_frames": 12820
+    },
+    "S5/Seq2": {
+        "bg_augmentable": 1,
+        "ub_augmentable": 1,
+        "lb_augmentable": 1,
+        "chair_augmentable": 1,
+        "fps": 50,
+        "num_frames": 12312
+    },
+    "S6/Seq1": {
+        "bg_augmentable": 1,
+        "ub_augmentable": 0,
+        "lb_augmentable": 0,
+        "chair_augmentable": 1,
+        "fps": 25,
+        "num_frames": 6188
+    },
+    "S6/Seq2": {
+        "bg_augmentable": 1,
+        "ub_augmentable": 1,
+        "lb_augmentable": 1,
+        "chair_augmentable":  1,
+        "fps": 25,
+        "num_frames": 6145
+    },
+    "S7/Seq1": {
+        "bg_augmentable": 1,
+        "ub_augmentable": 1,
+        "lb_augmentable": 1,
+        "chair_augmentable": 1,
+        "fps": 25,
+        "num_frames": 6239
+    },
+    "S7/Seq2": {
+        "bg_augmentable": 1,
+        "ub_augmentable": 0,
+        "lb_augmentable": 0,
+        "chair_augmentable": 1,
+        "fps": 25,
+        "num_frames": 6320
+    },
+    "S8/Seq1": {
+        "bg_augmentable": 1,
+        "ub_augmentable": 1,
+        "lb_augmentable": 1,
+        "chair_augmentable": 1,
+        "fps": 25,
+        "num_frames": 6468
+    },
+    "S8/Seq2": {
+        "bg_augmentable": 1,
+        "ub_augmentable": 0,
+        "lb_augmentable": 0,
+        "chair_augmentable": 1,
+        "fps": 25,
+        "num_frames": 6054
+    }
+}

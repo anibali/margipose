@@ -1,0 +1,45 @@
+# Requires Docker Compose 1.19+ and nvidia-docker2
+version: '2.3'
+services:
+  main:
+    build: .
+    volumes:
+      # Volume mounts for the datasets
+      - /data/h36m/processed:/datasets/h36m:ro
+      - /data/fast/mpi_inf_3dhp:/datasets/mpi3d:ro
+      - /data/mpii:/datasets/mpii:ro
+      # Other volume mounts
+      - .:/app
+      - ~/.torch/models:/home/user/.torch/models:rw
+      - /etc/localtime:/etc/localtime:ro
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw
+      - /etc/hostname:/etc/hostname:ro
+    environment:
+      - CUDA_DEVICE_ORDER=PCI_BUS_ID
+      - DISPLAY
+      - PYTHONIOENCODING=utf_8
+    env_file:
+      - secrets/showoff-client.env
+    init: true
+    runtime: nvidia
+    ipc: host
+    network_mode: host
+  showoff:
+    image: anibali/showoff:0.2.1
+    ports:
+      - "16700:3000"
+    env_file:
+      - ./secrets/postgres.env
+      - ./secrets/showoff.env
+    links:
+      - showoff-db:db
+  showoff-db:
+    image: postgres:9.5.7-alpine
+    env_file:
+      - ./secrets/postgres.env
+    volumes:
+      - "showoff-db-data:/var/lib/postgresql/data"
+
+volumes:
+  showoff-db-data:
+    external: false
