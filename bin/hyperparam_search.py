@@ -8,7 +8,6 @@ import plotly.graph_objs as go
 from os import path, environ
 from torch.optim import SGD
 import torch
-from torch.autograd import Variable
 from margipose.dsntnn import average_loss
 import json
 import tele
@@ -23,6 +22,8 @@ from margipose.utils import seed_all, init_algorithms
 
 sacred.SETTINGS['DISCOVER_SOURCES'] = 'dir'
 ex = sacred.Experiment(base_dir=path.realpath(path.join(__file__, '..', '..')))
+
+GPU = torch.device('cuda')
 
 
 def forward_loss(model, out_var, target_var, mask_var, valid_depth):
@@ -46,6 +47,7 @@ def forward_loss(model, out_var, target_var, mask_var, valid_depth):
 add_config_3d_models(ex)
 
 ex.add_config(
+    **ex.named_configs['margipose_model'](),
     showoff=not not environ.get('SHOWOFF_URL'),
     batch_size=32,
     deterministic=False,
@@ -66,7 +68,7 @@ def main(_run: Run, _seed, showoff, batch_size, model_desc, deterministic, train
     init_algorithms(deterministic=deterministic)
 
     model_factory = model_registry_3d.factory(model_desc)
-    model = model_factory.build_model().cuda()
+    model = model_factory.build_model().to(GPU)
     data_loader = create_train_dataloader(train_datasets, model.data_specs, batch_size,
                                           examples_per_epoch=(max_iters * batch_size))
     data_iter = iter(data_loader)
@@ -77,12 +79,9 @@ def main(_run: Run, _seed, showoff, batch_size, model_desc, deterministic, train
     def do_training_iteration(optimiser):
         batch = next(data_iter)
 
-        in_var = Variable(
-            batch['input'].type(torch.cuda.FloatTensor), requires_grad=False)
-        target_var = Variable(
-            batch['target'].type(torch.cuda.FloatTensor), requires_grad=False)
-        mask_var = Variable(
-            batch['joint_mask'].type(torch.cuda.FloatTensor), requires_grad=False)
+        in_var = batch['input'].to(GPU, torch.float32)
+        target_var = batch['target'].to(GPU, torch.float32)
+        mask_var = batch['joint_mask'].to(GPU, torch.float32)
 
         # Calculate predictions and loss
         out_var = model(in_var)
@@ -95,7 +94,7 @@ def main(_run: Run, _seed, showoff, batch_size, model_desc, deterministic, train
         # Update parameters
         optimiser.step()
 
-        return loss.data[0]
+        return loss.item()
 
     optimiser = SGD(model.parameters(), lr=1, weight_decay=weight_decay, momentum=momentum)
 

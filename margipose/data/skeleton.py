@@ -169,7 +169,7 @@ def calc_relative_scale(skeleton, ref_bone_lengths, joint_tree) -> (float, float
     if non_zero.sum() == 0: return 0
     ratio = (ref_bone_lengths / bone_lengths).masked_select(non_zero)
 
-    return ratio.median()
+    return ratio.median().item()
 
 
 def bone_path_length(sph_rel_joints, joint_a, joint_b, joint_tree):
@@ -208,9 +208,9 @@ def calculate_knee_neck_height(skel, joint_names):
     skel = ensure_cartesian(skel, d=3)
 
     return sum([
-        (skel[left_knee] - skel[left_hip]).norm(2),
-        (skel[spine] - skel[pelvis]).norm(2),
-        (skel[neck] - skel[spine]).norm(2),
+        (skel[left_knee] - skel[left_hip]).norm(2).item(),
+        (skel[spine] - skel[pelvis]).norm(2).item(),
+        (skel[neck] - skel[spine]).norm(2).item(),
     ])
 
 

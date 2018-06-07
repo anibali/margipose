@@ -40,7 +40,7 @@ class CameraIntrinsics():
     @property
     def x_0(self):
         """Get the principle point x-coordinate (in pixels along x-axis)."""
-        return self.matrix[0, 2]
+        return self.matrix[0, 2].item()
 
     @x_0.setter
     def x_0(self, value):
@@ -50,7 +50,7 @@ class CameraIntrinsics():
     @property
     def y_0(self):
         """Get the principle point y-coordinate (in pixels along y-axis)."""
-        return self.matrix[1, 2]
+        return self.matrix[1, 2].item()
 
     @y_0.setter
     def y_0(self, value):
@@ -60,7 +60,7 @@ class CameraIntrinsics():
     @property
     def alpha_x(self):
         """Get the focal length (in pixels along x-axis)."""
-        return self.matrix[0, 0]
+        return self.matrix[0, 0].item()
 
     @alpha_x.setter
     def alpha_x(self, value):
@@ -70,7 +70,7 @@ class CameraIntrinsics():
     @property
     def alpha_y(self):
         """Get the focal length (in pixels along y-axis)."""
-        return self.matrix[1, 1]
+        return self.matrix[1, 1].item()
 
     @alpha_y.setter
     def alpha_y(self, value):

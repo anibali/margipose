@@ -1,9 +1,11 @@
 import random
+from torch.utils.data.sampler import Sampler
 from margipose.data import PoseDataset
 
 
-class RoundRobinSampler():
+class RoundRobinSampler(Sampler):
     def __init__(self, index_lists, num_samples):
+        super().__init__(None)
         self.index_lists = index_lists
         self.num_samples = num_samples
 

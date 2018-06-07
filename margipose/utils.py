@@ -3,7 +3,6 @@ import plotly.graph_objs as go
 
 from PIL import ImageDraw
 import torch
-from torch.autograd import Variable
 import numpy as np
 import random
 from time import perf_counter
@@ -303,16 +302,6 @@ def generator_timer(iterable, meter):
         with timer(meter):
             vals = next(iterator)
         yield vals
-
-
-def object_memory_usage(obj):
-    if isinstance(obj, Variable):
-        obj = obj.data
-    if torch.is_tensor(obj):
-        obj = obj.storage()
-    if torch.is_storage(obj):
-        return obj.size() * obj.element_size()
-    raise Exception('unrecognised object type')
 
 
 def gpu_memory_usage():

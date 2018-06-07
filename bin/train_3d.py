@@ -10,7 +10,6 @@ from os import environ, path, makedirs
 import tele
 from tele.meter import ValueMeter, MeanValueMeter
 import torch.cuda
-from torch.autograd import Variable
 from margipose.dsntnn import average_loss
 
 from margipose.config import add_config_3d_models
@@ -23,6 +22,9 @@ from margipose.hyperparam_scheduler import make_1cycle
 
 sacred.SETTINGS['DISCOVER_SOURCES'] = 'dir'
 ex = sacred.Experiment(base_dir=path.realpath(path.join(__file__, '..', '..')))
+
+CPU = torch.device('cpu')
+GPU = torch.device('cuda')
 
 
 class Reporter:
@@ -116,9 +118,7 @@ def calculate_performance_metrics(batch, dataset, norm_pred_skels, mpjpe_meter, 
 
 
 @ex.capture
-def forward_loss(model, out_var, target_var, mask_var, valid_depth, geometric_loss_coeff):
-    assert geometric_loss_coeff == 0, 'TODO: Geometric loss'
-
+def forward_loss(model, out_var, target_var, mask_var, valid_depth):
     target_var = target_var.narrow(-1, 0, 3)
 
     if not 0 in valid_depth:
@@ -150,25 +150,22 @@ def do_training_pass(epoch, model, tel, loader, scheduler, on_progress):
             scheduler.batch_step()
 
         with timer(tel['data_transfer_time']):
-            in_var = Variable(
-                batch['input'].type(torch.cuda.FloatTensor), requires_grad=False)
-            target_var = Variable(
-                batch['target'].type(torch.cuda.FloatTensor), requires_grad=False)
-            mask_var = Variable(
-                batch['joint_mask'].type(torch.cuda.FloatTensor), requires_grad=False)
+            in_var = batch['input'].to(GPU, torch.float32)
+            target_var = batch['target'].to(GPU, torch.float32)
+            mask_var = batch['joint_mask'].to(GPU, torch.float32)
 
         # Calculate predictions and loss
         with timer(tel['forward_time']):
             out_var = model(in_var)
             loss = forward_loss(model, out_var, target_var, mask_var, batch['valid_depth'])
-            tel['train_loss'].add(loss.data.sum())
+            tel['train_loss'].add(loss.sum().item())
 
         # Calculate accuracy metrics
         with timer(tel['eval_time']):
             calculate_performance_metrics(
                 batch,
                 loader.dataset,
-                ensure_homogeneous(out_var.data.type(torch.DoubleTensor), d=3),
+                ensure_homogeneous(out_var.to(CPU, torch.float64).detach(), d=3),
                 tel['train_mpjpe'],
                 tel['train_pck']
             )
@@ -187,7 +184,7 @@ def do_training_pass(epoch, model, tel, loader, scheduler, on_progress):
         on_progress(samples_processed)
 
         if vis_images is None:
-            preds = out_var.data.type(torch.DoubleTensor)
+            preds = out_var.to(CPU, torch.float64).detach()
             vis_images = visualise_predictions(preds, batch, loader.dataset)
 
     tel['train_examples'].set_value(vis_images[:8])
@@ -197,56 +194,35 @@ def do_validation_pass(epoch, model, tel, loader):
     vis_images = None
 
     model.eval()
-    for batch in progress_iter(loader, 'Validation'):
-        in_var = Variable(
-            batch['input'].type(torch.cuda.FloatTensor), volatile=True)
-        target_var = Variable(
-            batch['target'].type(torch.cuda.FloatTensor), volatile=True)
-        mask_var = Variable(
-            batch['joint_mask'].type(torch.cuda.FloatTensor), volatile=True)
+    with torch.no_grad():
+        for batch in progress_iter(loader, 'Validation'):
+            in_var = batch['input'].to(GPU, torch.float32)
+            target_var = batch['target'].to(GPU, torch.float32)
+            mask_var = batch['joint_mask'].to(GPU, torch.float32)
 
-        # Calculate predictions and loss
-        out_var = model(in_var)
-        loss = forward_loss(model, out_var, target_var, mask_var, batch['valid_depth'])
-        tel['val_loss'].add(loss.data.sum())
+            # Calculate predictions and loss
+            out_var = model(in_var)
+            loss = forward_loss(model, out_var, target_var, mask_var, batch['valid_depth'])
+            tel['val_loss'].add(loss.sum().item())
 
-        calculate_performance_metrics(
-            batch,
-            loader.dataset,
-            ensure_homogeneous(out_var.data.type(torch.DoubleTensor), d=3),
-            tel['val_mpjpe'],
-            tel['val_pck']
-        )
+            calculate_performance_metrics(
+                batch,
+                loader.dataset,
+                ensure_homogeneous(out_var.to(CPU, torch.float64).detach(), d=3),
+                tel['val_mpjpe'],
+                tel['val_pck']
+            )
 
-        if vis_images is None:
-            preds = out_var.data.type(torch.DoubleTensor)
-            vis_images = visualise_predictions(preds, batch, loader.dataset)
+            if vis_images is None:
+                preds = out_var.to(CPU, torch.float64).detach()
+                vis_images = visualise_predictions(preds, batch, loader.dataset)
 
     tel['val_examples'].set_value(vis_images[:8])
 
 
 add_config_3d_models(ex)
 
-# Configuration defaults
-ex.add_config(
-    showoff=not not environ.get('SHOWOFF_URL'),
-    out_dir='out',
-    batch_size=32,
-    lr=2.5e-3,
-    lr_milestones=[80, 140],
-    lr_gamma=0.1,
-    optim_algorithm='rmsprop',
-    epochs=150,
-    tags=[],
-    quick=False,
-    experiment_id=datetime.datetime.now().strftime('%Y%m%d-%H%M%S%f'),
-    weights=None,
-    geometric_loss_coeff=0,
-    deterministic=False,
-    train_datasets=['mpi3d-train', 'mpii-train'],
-    val_datasets=['mpi3d-val'],
-)
-
+# Use this config to do a quick test run
 ex.add_named_config(
     'quick',
     out_dir='',
@@ -256,10 +232,19 @@ ex.add_named_config(
 )
 
 ex.add_named_config(
+    'rmsprop',
+    optim_algorithm='rmsprop',
+    epochs=150,
+    lr=2.5e-3,
+    lr_milestones=[80, 140],
+    lr_gamma=0.1,
+)
+
+ex.add_named_config(
     '1cycle',
     optim_algorithm='1cycle',
-    lr=1.0,
     epochs=100,
+    lr=1.0,
     lr_milestones=None,
     lr_gamma=None,
 )
@@ -274,6 +259,22 @@ ex.add_named_config(
     'h36m',
     train_datasets=['h36m-trainval', 'mpii-train'],
     val_datasets=[],
+)
+
+# Configuration defaults
+ex.add_config(
+    **ex.named_configs['1cycle'](),
+    **ex.named_configs['margipose_model'](),
+    showoff=not not environ.get('SHOWOFF_URL'),
+    out_dir='out',
+    batch_size=32,
+    tags=[],
+    quick=False,
+    experiment_id=datetime.datetime.now().strftime('%Y%m%d-%H%M%S%f'),
+    weights=None,
+    deterministic=False,
+    train_datasets=['mpi3d-train', 'mpii-train'],
+    val_datasets=['mpi3d-val'],
 )
 
 
@@ -308,7 +309,7 @@ def main(_run: Run, _seed, showoff, out_dir, batch_size, epochs, tags, model_des
         weights_model = torch.load(weights)
         state_dict = weights_model['state_dict']
         model.load_state_dict(state_dict, strict=True)
-    model.cuda()
+    model.to(GPU)
 
     ####
     # Data

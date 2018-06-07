@@ -12,7 +12,6 @@ from tkinter import ttk
 import tkinter.font
 import argparse
 import torch
-from torch.autograd import Variable
 from functools import lru_cache
 import os
 import numpy as np
@@ -25,6 +24,9 @@ from margipose.utils import plot_skeleton_on_axes3d, plot_skeleton_on_axes, seed
 from margipose.models.model_registry import model_registry_3d
 from margipose.eval import mpjpe, pck
 from margipose.data_specs import DataSpecs, ImageSpecs, JointsSpecs
+
+CPU = torch.device('cpu')
+GPU = torch.device('cuda')
 
 
 def parse_args():
@@ -71,9 +73,9 @@ def load_and_process_example(dataset, example_index, model=None):
     example = load_example(dataset, example_index)
     if model is None:
         return example
-    in_var = Variable(example['input'].unsqueeze(0).type(torch.cuda.FloatTensor), volatile=True)
+    in_var = example['input'].unsqueeze(0).to(GPU, torch.float32)
     out_var = model(in_var)
-    pred_skel_norm = ensure_homogeneous(out_var.data.type(torch.DoubleTensor).squeeze(0), d=3)
+    pred_skel_norm = ensure_homogeneous(out_var.squeeze(0).to(CPU, torch.float64), d=3)
     pred_skel_denorm = dataset.denormalise_with_skeleton_height(
         pred_skel_norm, example['camera'], example['transform_opts'])
     pred_skel_image_space = example['camera'].project_cartesian(pred_skel_denorm)
@@ -84,9 +86,9 @@ def load_and_process_example(dataset, example_index, model=None):
             camera_space=pred_skel_camera_space,
             image_space=pred_skel_image_space,
         ),
-        xy_heatmaps=[hm.squeeze(0).data.type(torch.FloatTensor) for hm in model.xy_heatmaps],
-        zy_heatmaps=[hm.squeeze(0).data.type(torch.FloatTensor) for hm in model.zy_heatmaps],
-        xz_heatmaps=[hm.squeeze(0).data.type(torch.FloatTensor) for hm in model.xz_heatmaps],
+        xy_heatmaps=[hm.squeeze(0).to(CPU, torch.float32) for hm in model.xy_heatmaps],
+        zy_heatmaps=[hm.squeeze(0).to(CPU, torch.float32) for hm in model.zy_heatmaps],
+        xz_heatmaps=[hm.squeeze(0).to(CPU, torch.float32) for hm in model.xz_heatmaps],
         **example
     )
 
@@ -370,6 +372,7 @@ def main():
     args = parse_args()
     seed_all(12345)
     init_algorithms(deterministic=True)
+    torch.set_grad_enabled(False)
 
     sns.set(style="white")
 
@@ -377,7 +380,7 @@ def main():
         model_state = torch.load(args.model)
         model = model_registry_3d.factory(model_state['model_desc']).build_model()
         model.load_state_dict(model_state['state_dict'])
-        model = model.cuda()
+        model = model.to(GPU)
         model.eval()
         data_specs = model.data_specs
     else:

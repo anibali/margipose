@@ -2,7 +2,6 @@ import unittest
 from .common import TestCase
 from types import SimpleNamespace
 import torch
-from torch.autograd import Variable
 from margipose.dsntnn import make_gauss
 
 from margipose.models.margipose_model import HeatmapColumn, MargiPoseModel
@@ -19,9 +18,10 @@ class TestMargiPose(TestCase):
         )
 
     def test_margipose(self):
-        in_var = Variable(torch.randn(1, 3, 256, 256), volatile=True)
-        model = MargiPoseModel(CanonicalSkeletonDesc, n_stages=2)
-        out_var = model(in_var)
+        with torch.no_grad():
+            in_var = torch.randn(1, 3, 256, 256)
+            model = MargiPoseModel(CanonicalSkeletonDesc, n_stages=2)
+            out_var = model(in_var)
         self.assertEqual(out_var.size(), torch.Size([1, 17, 3]))
 
     def test_heatmaps_to_coords(self):

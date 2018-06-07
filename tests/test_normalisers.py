@@ -3,7 +3,6 @@ from .common import TestCase
 from .data import UnitTestData as D
 
 import torch
-from torch.autograd import Variable
 
 from margipose.data.normalisers import SquareNormaliser, PerspectiveNormaliser, NdcNormaliser
 from margipose.data.skeleton import calc_relative_scale, cartesian_to_spherical, \
@@ -39,14 +38,14 @@ class TestSquareNormaliser(TestCase):
         z_ref = skeleton[root_joint, 2]
         norm_skel = normaliser.normalise_skeleton(skeleton, z_ref, camera_intrinsics, img_h, img_w)
 
-        norm_skel_var = Variable(norm_skel, requires_grad=True)
+        norm_skel.requires_grad = True
         denorm_skel_var = normaliser.denormalise_skeleton(
-            norm_skel_var, z_ref, camera_intrinsics, img_h, img_w)
+            norm_skel, z_ref, camera_intrinsics, img_h, img_w)
 
         self.assertEqual(denorm_skel_var.data, skeleton)
 
         denorm_skel_var.sum().backward()
-        self.assertIsNotNone(norm_skel_var.grad)
+        self.assertIsNotNone(norm_skel.grad)
 
 
 class TestPerspectiveNormaliser(TestCase):
@@ -88,14 +87,14 @@ class TestPerspectiveNormaliser(TestCase):
         z_ref = skeleton[root_joint, 2]
         norm_skel = normaliser.normalise_skeleton(skeleton, z_ref, camera_intrinsics, img_h, img_w)
 
-        norm_skel_var = Variable(norm_skel, requires_grad=True)
+        norm_skel.requires_grad = True
         denorm_skel_var = normaliser.denormalise_skeleton(
-            norm_skel_var, z_ref, camera_intrinsics, img_h, img_w)
+            norm_skel, z_ref, camera_intrinsics, img_h, img_w)
 
         self.assertEqual(denorm_skel_var.data, skeleton)
 
         denorm_skel_var.sum().backward()
-        self.assertIsNotNone(norm_skel_var.grad)
+        self.assertIsNotNone(norm_skel.grad)
 
     def test_normalise_skeleton(self):
         normaliser = PerspectiveNormaliser()

@@ -266,10 +266,10 @@ class H36MDataset(PoseDataset):
         # Bounding box details
         joints2d = homogeneous_to_cartesian(
             orig_camera.project(ensure_homogeneous(orig_skel, d=3)))
-        min_x = joints2d[:, 0].min()
-        max_x = joints2d[:, 0].max()
-        min_y = joints2d[:, 1].min()
-        max_y = joints2d[:, 1].max()
+        min_x = joints2d[:, 0].min().item()
+        max_x = joints2d[:, 0].max().item()
+        min_y = joints2d[:, 1].min().item()
+        max_y = joints2d[:, 1].max().item()
         bb_cx = (min_x + max_x) / 2
         bb_cy = (min_y + max_y) / 2
         bb_size = 1.5 * max(max_x - min_x, max_y - min_y)

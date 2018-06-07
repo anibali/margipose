@@ -89,8 +89,8 @@ class TestSkeleton(TestCase):
         rshoulder = new_skel[skel_desc.joint_names.index('right_shoulder')]
 
         self.assertEqual(pelvis, torch.Tensor([0, 0, 0, 1]))
-        self.assertEqual(lshoulder[2], 0)
-        self.assertEqual(rshoulder[2], 0)
+        self.assertEqual(lshoulder[2].item(), 0)
+        self.assertEqual(rshoulder[2].item(), 0)
 
 
 if __name__ == '__main__':

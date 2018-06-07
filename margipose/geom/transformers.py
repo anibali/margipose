@@ -110,7 +110,7 @@ class ImageTransformer(Transformer):
     @property
     def output_size(self):
         """Dimensions of the transformed image in pixels (width, height)."""
-        return tuple(self.dest_size.round().int())
+        return tuple(self.dest_size.round().int().tolist())
 
     def adjust_colour(self, brightness, contrast, saturation, hue):
         self.brightness = brightness

@@ -10,25 +10,25 @@ def mpjpe(actual, expected, included_joints=None):
     dists = euclidean_losses(actual, expected)
     if included_joints is not None:
         dists = dists.gather(-1, torch.LongTensor(included_joints))
-    return dists.mean()
+    return dists.mean().item()
 
 
 def pck(actual, expected, included_joints=None, threshold=150):
     dists = euclidean_losses(actual, expected)
     if included_joints is not None:
         dists = dists.gather(-1, torch.LongTensor(included_joints))
-    return (dists < threshold).double().mean()
+    return (dists < threshold).double().mean().item()
 
 
 def auc(actual, expected, included_joints=None):
     # This range of thresholds mimics `mpii_compute_3d_pck.m`, which is provided as part of the
     # MPI-INF-3DHP test data release.
-    thresholds = torch.linspace(0, 150, 31)
+    thresholds = torch.linspace(0, 150, 31).tolist()
 
     pck_values = torch.DoubleTensor(len(thresholds))
     for i, threshold in enumerate(thresholds):
         pck_values[i] = pck(actual, expected, included_joints, threshold=threshold)
-    return pck_values.mean()
+    return pck_values.mean().item()
 
 
 def prepare_for_3d_evaluation(original_skel, norm_pred, dataset, camera_intrinsics, transform_opts,

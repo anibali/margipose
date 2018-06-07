@@ -5,7 +5,6 @@
 
 import argparse
 import torch
-from torch.autograd import Variable
 import json
 from tqdm import tqdm
 from tele.meter import MeanValueMeter, MedianValueMeter
@@ -19,6 +18,9 @@ from margipose.models.model_registry import model_registry_3d
 from margipose.utils import timer
 from margipose.geom import ensure_homogeneous
 from margipose.dsntnn import average_loss
+
+CPU = torch.device('cpu')
+GPU = torch.device('cuda')
 
 
 def parse_args():
@@ -50,19 +52,17 @@ def run_evaluation_3d(model, loader, included_joints, known_depth=False, print_p
         iterable = tqdm(loader, leave=True, ascii=True)
 
     for batch in iterable:
-        in_var = Variable(
-            batch['input'].type(torch.cuda.FloatTensor), volatile=True)
-        target_var = Variable(
-            batch['target'].type(torch.cuda.FloatTensor), volatile=True)
+        in_var = batch['input'].to(GPU, torch.float32)
+        target_var = batch['target'].to(GPU, torch.float32)
 
         # Calculate predictions and loss
         with timer(time_meter):
             out_var = model(in_var)
         loss = average_loss(model.forward_3d_losses(out_var, target_var.narrow(-1, 0, 3)))
 
-        loss_meter.add(loss.data.sum())
+        loss_meter.add(loss.sum().item())
 
-        norm_preds = ensure_homogeneous(out_var.data.type(torch.DoubleTensor), d=3)
+        norm_preds = ensure_homogeneous(out_var.to(CPU, torch.float64), d=3)
 
         actuals = []
         expected = None
@@ -97,11 +97,12 @@ def main():
     args = parse_args()
     seed_all(12345)
     init_algorithms(deterministic=True)
+    torch.set_grad_enabled(False)
 
     model_state = torch.load(args.model)
     model = model_registry_3d.factory(model_state['model_desc']).build_model()
     model.load_state_dict(model_state['state_dict'])
-    model = model.cuda()
+    model = model.to(GPU)
     model.eval()
 
     dataset = get_dataset(args.dataset, model.data_specs, use_aug=False)

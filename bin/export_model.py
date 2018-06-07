@@ -6,7 +6,6 @@
 import argparse
 import torch
 from torch import onnx
-from torch.autograd import Variable
 
 from margipose.utils import seed_all, init_algorithms
 from margipose.models.model_registry import model_registry_3d
@@ -48,8 +47,8 @@ def main():
     elif args.format == 'onnx':
         image_height = model.data_specs.input_specs.height
         image_width = model.data_specs.input_specs.width
-        dummy_input = Variable(torch.randn(1, 3, image_height, image_width))
-        onnx.export(model, (dummy_input,), args.output, verbose=True)
+        dummy_input = torch.randn(1, 3, image_height, image_width)
+        onnx.export(model, (dummy_input,), args.output, verbose=False)
     else:
         raise Exception('Unrecognised model format: {}'.format(args.format))
 

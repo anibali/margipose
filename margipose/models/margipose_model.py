@@ -197,7 +197,7 @@ class HeatmapCombiner(nn.Module):
 
 
 class MargiPoseModelInner(nn.Module):
-    def __init__(self, n_joints, n_stages, bad_shrink, disable_chatterbox,
+    def __init__(self, n_joints, n_stages, bad_permutation, disable_permutation,
                  feature_extractor, disable_dilation):
         super().__init__()
 
@@ -209,10 +209,10 @@ class MargiPoseModelInner(nn.Module):
         self.hm_combiners = nn.ModuleList()
 
         xy = 'xy'
-        if disable_chatterbox:
+        if disable_permutation:
             zy = 'xy'
             xz = 'xy'
-        elif bad_shrink:
+        elif bad_permutation:
             zy = 'xz'
             xz = 'zy'
         else:
@@ -251,9 +251,10 @@ class MargiPoseModelInner(nn.Module):
 
 
 class MargiPoseModel(nn.Module):
-    def __init__(self, skel_desc, only_2d=False, coord_space='ndc', n_stages=4, bad_shrink=False,
-                 disable_chatterbox=False, data_parallel=False, feature_extractor='inceptionv4',
-                 average_xy=False, disable_dilation=False, disable_reg=False):
+    def __init__(self, skel_desc, only_2d=False, coord_space='ndc', n_stages=4,
+                 bad_permutation=False, disable_permutation=False, data_parallel=False,
+                 feature_extractor='inceptionv4', average_xy=False, disable_dilation=False,
+                 disable_reg=False):
         super().__init__()
 
         self.data_specs = DataSpecs(
@@ -264,8 +265,8 @@ class MargiPoseModel(nn.Module):
         self.average_xy = average_xy
         self.disable_reg = disable_reg
 
-        self.inner = MargiPoseModelInner(skel_desc.n_joints, n_stages, bad_shrink,
-                                         disable_chatterbox, feature_extractor, disable_dilation)
+        self.inner = MargiPoseModelInner(skel_desc.n_joints, n_stages, bad_permutation,
+                                         disable_permutation, feature_extractor, disable_dilation)
         if data_parallel:
             self.inner = nn.DataParallel(self.inner)
 
@@ -310,11 +311,11 @@ class MargiPoseModel(nn.Module):
         zy = dsnt(zy_hm)
         xz = dsnt(xz_hm)
         if self.average_xy:
-            x = 0.5 * (xy.narrow(-1, 0, 1) + xz.narrow(-1, 0, 1))
-            y = 0.5 * (xy.narrow(-1, 1, 1) + zy.narrow(-1, 1, 1))
+            x = 0.5 * (xy[:, :, 0:1] + xz[:, :, 0:1])
+            y = 0.5 * (xy[:, :, 1:2] + zy[:, :, 1:2])
         else:
             x, y = xy.split(1, -1)
-        z = 0.5 * (zy.narrow(-1, 0, 1) + xz.narrow(-1, 1, 1))
+        z = 0.5 * (zy[:, :, 0:1] + xz[:, :, 1:2])
         return torch.cat([x, y, z], -1)
 
     def forward(self, *inputs):
@@ -342,14 +343,19 @@ class MargiPoseModelFactory(ModelFactory):
         s = dict(
             coord_space=settings.get('coord_space', 'ndc'),
             n_stages=settings.get('n_stages', 4),
-            bad_shrink=settings.get('bad_shrink', False),
-            disable_chatterbox=settings.get('disable_chatterbox', False),
+            bad_permutation=settings.get('bad_permutation', False),
+            disable_permutation=settings.get('disable_permutation', False),
             data_parallel=settings.get('data_parallel', False),
             feature_extractor=settings.get('feature_extractor', 'inceptionv4'),
             average_xy=settings.get('average_xy', False),
             disable_reg=settings.get('disable_reg', False),
             disable_dilation=settings.get('disable_dilation', self.version in Spec('>=4.2.4'))
         )
+        # LEGACY: Support old setting names
+        if 'disable_chatterbox' in settings:
+            s['disable_permutation'] = settings['disable_chatterbox']
+        if 'bad_shrink' in settings:
+            s['bad_permutation'] = settings['bad_shrink']
 
         return s
 
