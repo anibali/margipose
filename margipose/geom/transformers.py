@@ -57,7 +57,6 @@ def affine_warp(image: Image.Image, matrix, output_size, border_mode='zero'):
     """
     if border_mode == 'zero':
         # Use PIL to do the transform
-        assert border_mode == 'zero', 'Install OpenCV for border mode != "zero"'
         inv_matrix = matrix.inverse().contiguous()
         image = image.transform(
             output_size,

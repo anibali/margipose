@@ -1,10 +1,6 @@
 #!/usr/bin/env bash
 #
-# Use this script to run executables from this project.
-#
-# Example usage:
-#
-#     ./run.sh bin/train_3d.py with margipose
+# Use this launcher script to run executables in a containerised environment.
 
 set -e
 

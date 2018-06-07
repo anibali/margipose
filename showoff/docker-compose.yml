@@ -1,0 +1,22 @@
+# Requires Docker Compose 1.19+ and nvidia-docker2
+version: '2.3'
+services:
+  showoff:
+    image: anibali/showoff:0.2.1
+    ports:
+      - "13000:3000"
+    env_file:
+      - ./postgres.env
+      - ./showoff.env
+    links:
+      - showoff-db:db
+  showoff-db:
+    image: postgres:9.5.7-alpine
+    env_file:
+      - ./postgres.env
+    volumes:
+      - "margipose-showoff-data:/var/lib/postgresql/data"
+
+volumes:
+  margipose-showoff-data:
+    external: false
