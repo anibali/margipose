@@ -19,7 +19,7 @@ from margipose.data.skeleton import absolute_to_root_relative
 
 
 def _progress(iterator, name):
-    return tqdm(iterator, desc='{:10s}'.format(name), leave=False)
+    return tqdm(iterator, desc='{:10s}'.format(name), ascii=True, leave=False)
 
 
 def is_image_ok(image_file):
@@ -89,10 +89,11 @@ def interesting_frame_indices(annot, camera_id, n_frames):
     for i in range(n_frames):
         joints3d = univ_annot3[i]
         if prev_joints3d is not None:
-            max_move = (joints3d - prev_joints3d).pow(2).sum(-1).max()
+            max_move = (joints3d - prev_joints3d).pow(2).sum(-1).max().item()
             if max_move < threshold:
                 continue
-        if annot2[i].min() >= 0 and annot2[i].max() < 2048:
+        # Keep pose if all joint coordinates are within the image bounds
+        if annot2[i].min().item() >= 0 and annot2[i].max().item() < 2048:
             prev_joints3d = joints3d
             frame_indices.append(i)
     return frame_indices
@@ -116,8 +117,8 @@ def _add_annotation_metadata(f, annot, n_frames):
     rel_univ = absolute_to_root_relative(torch.from_numpy(annot.univ_annot3), root_index)
     non_zero = rel_univ.abs().gt(1e-6)
     ratio = (rel_annot3 / rel_univ).masked_select(non_zero)
-    assert ratio.std() < 1e-6
-    ds[:] = ratio.mean()
+    assert ratio.std().item() < 1e-6
+    ds[:] = ratio.mean().item()
 
 
 def process_sequence(in_dir, out_dir, n_frames, blacklist):
