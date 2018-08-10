@@ -251,13 +251,13 @@ ex.add_named_config(
 
 ex.add_named_config(
     'mpi3d',
-    train_datasets=['mpi3d-trainval', 'mpii-train'],
+    train_datasets=['mpi3d-trainval', 'mpii-trainval'],
     val_datasets=[],
 )
 
 ex.add_named_config(
     'h36m',
-    train_datasets=['h36m-trainval', 'mpii-train'],
+    train_datasets=['h36m-trainval', 'mpii-trainval'],
     val_datasets=[],
 )
 
@@ -273,8 +273,6 @@ ex.add_config(
     experiment_id=datetime.datetime.now().strftime('%Y%m%d-%H%M%S%f'),
     weights=None,
     deterministic=False,
-    train_datasets=['mpi3d-train', 'mpii-train'],
-    val_datasets=['mpi3d-val'],
 )
 
 

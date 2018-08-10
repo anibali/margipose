@@ -74,7 +74,7 @@ containing all of MargiPose's dependencies. Here are a few examples.
 Train a MargiPose model on the mpi3d dataset:
 
 ```bash
-./run.sh bin/train_3d.py with margipose 1cycle mpi3d
+./run.sh bin/train_3d.py with margipose_model 1cycle mpi3d
 ```
 
 Evaluate a model's test set performance using the second GPU:

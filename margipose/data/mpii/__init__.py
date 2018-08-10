@@ -241,7 +241,7 @@ class MpiiDataset(PoseDataset):
         # lead to particularly prominent errors when the subject is not in
         # the original image centre.
         focal_length = orig_image.width * 1.2
-        orig_camera = CameraIntrinsics.from_ccd_params(focal_length, focal_length, 0, 0)
+        orig_camera = CameraIntrinsics.from_ccd_params(focal_length, focal_length, orig_image.width / 2, orig_image.height / 2)
         extrinsics = torch.eye(4).double()
 
         transform_opts = {
@@ -273,6 +273,8 @@ class MpiiDataset(PoseDataset):
 
             orig_target = torch.cat(
                 [orig_target, torch.ones_like(orig_target.narrow(-1, 0, 2))], -1)
+            orig_target[:, 0] -= orig_image.width / 2
+            orig_target[:, 1] -= orig_image.height / 2
             orig_target[:, 2] = orig_z_ref
             part_coords = ctx.point_transformer.transform(orig_target)
 
