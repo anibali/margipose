@@ -1,11 +1,12 @@
 import json
-import torch
 import re
+
 import numpy as np
+import torch
 from importlib_resources import read_text
+from pose3d_utils.camera import CameraIntrinsics
 
 from margipose.data.skeleton import SkeletonDesc
-from margipose.geom.camera import CameraIntrinsics
 
 Constants = {
     # Training set sequences: (subject_id, sequence_id)

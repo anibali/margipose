@@ -1,24 +1,24 @@
 #!/usr/bin/env python3
 
-import sacred
-from sacred.run import Run
-from sacred.host_info import get_host_info
 import datetime
 import json
 from os import environ, path, makedirs
 
+import sacred
 import tele
-from tele.meter import ValueMeter, MeanValueMeter
 import torch.cuda
-from margipose.dsntnn import average_loss
+from pose3d_utils.coords import ensure_homogeneous
+from sacred.host_info import get_host_info
+from sacred.run import Run
+from tele.meter import ValueMeter, MeanValueMeter
 
 from margipose.config import add_config_3d_models
-from margipose.geom import ensure_homogeneous
-from margipose.utils import seed_all, init_algorithms, timer, generator_timer
+from margipose.dsntnn import average_loss
+from margipose.hyperparam_scheduler import make_1cycle
 from margipose.models.model_registry import model_registry_3d
 from margipose.train_helpers import visualise_predictions, progress_iter, create_showoff_notebook, \
     learning_schedule, create_train_dataloader, create_val_dataloader
-from margipose.hyperparam_scheduler import make_1cycle
+from margipose.utils import seed_all, init_algorithms, timer, generator_timer
 
 sacred.SETTINGS['DISCOVER_SOURCES'] = 'dir'
 ex = sacred.Experiment(base_dir=path.realpath(path.join(__file__, '..', '..')))

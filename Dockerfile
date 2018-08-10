@@ -40,19 +40,17 @@ ENV CONDA_DEFAULT_ENV=py36
 ENV CONDA_PREFIX=/home/user/miniconda/envs/$CONDA_DEFAULT_ENV
 ENV PATH=$CONDA_PREFIX/bin:$PATH
 
-# Install PyTorch with Cuda 9.1 support
+# Install PyTorch with cuda-9.2 support
 RUN conda install -y -c pytorch \
-    cuda91=1.0 \
-    magma-cuda91=2.3.0 \
-    pytorch=0.4.0 \
+    cuda92=1.0 \
+    magma-cuda92=2.3.0 \
+    "pytorch=0.4.1=py36_cuda9.2.148_cudnn7.1.4_1" \
     torchvision=0.2.1 \
  && conda clean -ya
 
-# Install OpenCV, FFmpeg, and Graphviz
-RUN conda install --no-update-deps -y -c conda-forge opencv=3.3.0 ffmpeg=3.2.4 graphviz=2.38.0 \
+# Install FFmpeg and Graphviz
+RUN conda install --no-update-deps -y -c conda-forge ffmpeg=3.2.4 graphviz=2.38.0 \
  && conda clean -ya
-RUN sudo apt-get update && sudo apt-get install -y libgl1-mesa-glx \
- && sudo rm -rf /var/lib/apt/lists/*
 
 # Use tkinter as the default matplotlib backend
 RUN mkdir -p $HOME/.config/matplotlib \

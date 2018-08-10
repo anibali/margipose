@@ -1,28 +1,29 @@
 from abc import ABCMeta, abstractmethod
+from collections import Mapping, Sequence
+
 import torch
+from pose3d_utils.camera import CameraIntrinsics
+from pose3d_utils.coords import ensure_homogeneous
+from pose3d_utils.skeleton_normaliser import SkeletonNormaliser
+from pose3d_utils.transformers import TransformerContext
+import pose3d_utils.transforms as transforms
 from torch._six import string_classes, int_classes
 from torch.utils.data import Dataset
-from torch.utils.data.sampler import WeightedRandomSampler
 from torch.utils.data.dataloader import default_collate, DataLoader, SequentialSampler
-from collections import Mapping, Sequence
+from torch.utils.data.sampler import WeightedRandomSampler
 
 from margipose.data.skeleton import SkeletonDesc, calculate_knee_neck_height, \
     absolute_to_parent_relative, cartesian_to_spherical, calc_relative_scale, \
     make_eval_scale_bone_lengths, make_eval_scale_skeleton_height
-from margipose.data.normalisers import build_skeleton_normaliser
 from margipose.data_specs import DataSpecs
 from margipose.utils import seed_all
-from margipose.geom import ensure_homogeneous
-from margipose.geom.camera import CameraIntrinsics
-from margipose.geom.transformers import TransformerContext
-from margipose.geom.transforms import HorizontalFlip, SetImageResolution, SetCentre, ZoomImage, \
-    AdjustColour, RotateImage, SetCentreWithSimilarity, SquareCrop
 
 
 class PoseDataset(Dataset, metaclass=ABCMeta):
     def __init__(self, data_specs: DataSpecs):
         self.data_specs = data_specs
-        self.skeleton_normaliser = build_skeleton_normaliser(self.coord_space)
+        assert self.coord_space == 'ndc'
+        self.skeleton_normaliser = SkeletonNormaliser()
 
     def sampler(self, examples_per_epoch=None):
         total_length = len(self)
@@ -99,21 +100,15 @@ class PoseDataset(Dataset, metaclass=ABCMeta):
         return intrinsics.project_cartesian(denormalised)
 
     @staticmethod
-    def create_transformer_context(opts, z_ref) -> TransformerContext:
+    def create_transformer_context(opts) -> TransformerContext:
         ctx = TransformerContext(opts['in_camera'], opts['in_width'], opts['in_height'])
-        if opts['similarity']:
-            ctx.add(SetCentreWithSimilarity(opts['centre_x'], opts['centre_y'], z_ref))
-        else:
-            ctx.add(SetCentre(opts['centre_x'], opts['centre_y']))
-        ctx.add(RotateImage(opts['rotation']))
-        ctx.add(ZoomImage(opts['scale']))
-        ctx.add(SquareCrop())
-        ctx.add(HorizontalFlip(opts['hflip_indices'], opts['hflip']))
-        ctx.add(SetImageResolution(opts['out_width'], opts['out_height']))
-        ctx.add(AdjustColour(opts['brightness'], opts['contrast'], opts['saturation'], opts['hue']))
-
-        if opts['similarity']:
-            assert ctx.point_transformer.is_similarity(), 'expected similarity transform'
+        ctx.add(transforms.PanImage(opts['in_camera'].x_0 - opts['centre_x'], opts['in_camera'].y_0 - opts['centre_y']))
+        ctx.add(transforms.RotateImage(opts['rotation']))
+        ctx.add(transforms.ZoomImage(1 / opts['scale']))
+        ctx.add(transforms.HorizontalFlip(opts['hflip_indices'], opts['hflip']))
+        ctx.add(transforms.SquareCrop())
+        ctx.add(transforms.ChangeResolution(opts['out_width'], opts['out_height']))
+        ctx.add(transforms.AdjustColour(opts['brightness'], opts['contrast'], opts['saturation'], opts['hue']))
 
         return ctx
 
@@ -121,8 +116,7 @@ class PoseDataset(Dataset, metaclass=ABCMeta):
         """Transform a denormalised skeleton back into universal camera space."""
         # We can take z_ref from denorm_skel directly because we know that the transformer
         # doesn't change this value.
-        z_ref = denorm_skel[self.skeleton_desc.root_joint_id, 2]
-        ctx = self.create_transformer_context(trans_opts, z_ref)
+        ctx = self.create_transformer_context(trans_opts)
         return ctx.point_transformer.untransform(denorm_skel)
 
     @abstractmethod
