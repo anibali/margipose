@@ -62,21 +62,22 @@ H36MSkeletonDesc = SkeletonDesc(
 )
 
 H36M_Actions = {
-    1: 'Directions',
-    2: 'Discussion',
-    3: 'Eating',
-    4: 'Greeting',
-    5: 'Phoning',
-    6: 'Posing',
-    7: 'Purchases',
-    8: 'Sitting',
-    9: 'SittingDown',
-    10: 'Smoking',
-    11: 'TakingPhoto',
-    12: 'Waiting',
-    13: 'Walking',
-    14: 'WalkingDog',
-    15: 'WalkTogether',
+    1:  'Miscellaneous',
+    2:  'Directions',
+    3:  'Discussion',
+    4:  'Eating',
+    5:  'Greeting',
+    6:  'Phoning',
+    7:  'Posing',
+    8:  'Purchases',
+    9:  'Sitting',
+    10: 'SittingDown',
+    11: 'Smoking',
+    12: 'TakingPhoto',
+    13: 'Waiting',
+    14: 'Walking',
+    15: 'WalkingDog',
+    16: 'WalkingTogether',
 }
 
 
@@ -121,7 +122,8 @@ class H36MDataset(PoseDataset):
 
         annot_files = sorted(iglob(path.join(data_dir, 'S*', '*', 'annot.h5')))
 
-        keys = ['pose/2d', 'pose/3d', 'pose/3d-univ', 'camera', 'frame', 'subject', 'action']
+        keys = ['pose/2d', 'pose/3d', 'pose/3d-univ', 'camera', 'frame',
+                'subject', 'action', 'subaction']
         datasets = {}
         self.camera_intrinsics = []
 
@@ -145,6 +147,7 @@ class H36MDataset(PoseDataset):
         self.frame_ids = datasets['frame']
         self.subject_ids = datasets['subject']
         self.action_ids = datasets['action']
+        self.subaction_ids = datasets['subaction']
         self.camera_ids = datasets['camera']
         self.joint_3d = datasets['pose/3d-univ'] if universal else datasets['pose/3d']
         self.joint_2d = datasets['pose/2d']
@@ -196,7 +199,7 @@ class H36MDataset(PoseDataset):
         image_file = path.join(
             self.data_dir,
             'S{:d}'.format(self.subject_ids[id]),
-            H36M_Actions[self.action_ids[id]],
+            '{}-{:d}'.format(H36M_Actions[self.action_ids[id]], self.subaction_ids[id]),
             'imageSequence',
             str(self.camera_ids[id]),
             'img_{:06d}.jpg'.format(self.frame_ids[id])
