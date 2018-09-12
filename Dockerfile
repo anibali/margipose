@@ -1,4 +1,4 @@
-FROM nvidia/cuda:9.2-base-ubuntu16.04
+FROM nvidia/cuda:9.0-base-ubuntu16.04
 
 # Install some basic utilities
 RUN apt-get update && apt-get install -y \
@@ -25,7 +25,7 @@ ENV HOME=/home/user
 RUN chmod 777 /home/user
 
 # Install Miniconda
-RUN curl -so ~/miniconda.sh https://repo.continuum.io/miniconda/Miniconda3-4.5.1-Linux-x86_64.sh \
+RUN curl -so ~/miniconda.sh https://repo.continuum.io/miniconda/Miniconda3-4.5.4-Linux-x86_64.sh \
  && chmod +x ~/miniconda.sh \
  && ~/miniconda.sh -b -p ~/miniconda \
  && rm ~/miniconda.sh
@@ -40,11 +40,11 @@ ENV CONDA_DEFAULT_ENV=py36
 ENV CONDA_PREFIX=/home/user/miniconda/envs/$CONDA_DEFAULT_ENV
 ENV PATH=$CONDA_PREFIX/bin:$PATH
 
-# Install PyTorch with cuda-9.2 support
+# Install PyTorch with CUDA support
 RUN conda install -y -c pytorch \
-    cuda92=1.0 \
-    magma-cuda92=2.3.0 \
-    "pytorch=0.4.1=py36_cuda9.2.148_cudnn7.1.4_1" \
+    cuda90=1.0 \
+    magma-cuda90=2.3.0 \
+    "pytorch=0.4.1=py36_cuda9.0.176_cudnn7.1.2_1" \
     torchvision=0.2.1 \
  && conda clean -ya
 
@@ -63,7 +63,7 @@ RUN pip install -r requirements.txt
 # Replace Pillow with the faster Pillow-SIMD (optional)
 RUN pip uninstall -y pillow \
  && sudo apt-get update && sudo apt-get install -y gcc \
- && pip install pillow-simd==5.1.1.post0 \
+ && CC="cc -mavx2" pip install pillow-simd==5.1.1.post0 \
  && sudo apt-get remove -y gcc \
  && sudo apt-get autoremove -y \
  && sudo rm -rf /var/lib/apt/lists/*
