@@ -3,7 +3,7 @@ numpy==1.14.3
 Pillow==5.1.0
 tqdm==4.19.5
 scipy==1.0.0
-torch==0.4.0
+torch==0.4.1
 torchvision==0.2.1
 pretrainedmodels==0.6.0
 matplotlib==2.1.0
@@ -15,6 +15,6 @@ pymongo==3.6.0
 GitPython==2.1.8
 tabulate==0.8.2
 plotly==2.3.0
-seaborn==0.8.1
 git+https://github.com/anibali/pyshowoff.git@3396cb916c390886873fb0a6b8515f91c0c1574c#egg=pyshowoff
 git+https://github.com/anibali/tele.git@e2b0af5f28100abd581dbf3871bee90b178a5c98#egg=tele
+git+https://github.com/anibali/pose3d-utils@cd6185f274e5ba5fc53d5d47b99e432a22611c3d#egg=pose3d-utils

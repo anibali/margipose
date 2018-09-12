@@ -4,21 +4,21 @@ Data loader for the Human 3.6M dataset.
 Dataset home page: http://vision.imar.ro/human3.6m/
 """
 
+from glob import iglob
 from os import path
+
+import h5py
+import numpy as np
 import torch
 import torch.nn.functional
-import h5py
 from PIL import Image
-import numpy as np
-from glob import iglob
+from pose3d_utils.camera import CameraIntrinsics
+from pose3d_utils.coords import ensure_homogeneous, homogeneous_to_cartesian
 
 from margipose.data import PoseDataset, collate
-from margipose.data_specs import DataSpecs, ImageSpecs, JointsSpecs
 from margipose.data.skeleton import CanonicalSkeletonDesc, SkeletonDesc
+from margipose.data_specs import DataSpecs, ImageSpecs, JointsSpecs
 from margipose.eval import prepare_for_3d_evaluation, gather_3d_metrics
-from margipose.geom import ensure_homogeneous, homogeneous_to_cartesian
-from margipose.geom.camera import CameraIntrinsics
-
 
 H36MSkeletonDesc = SkeletonDesc(
     joint_names=[
@@ -217,8 +217,7 @@ class H36MDataset(PoseDataset):
         out_width = self.data_specs.input_specs.width
         out_height = self.data_specs.input_specs.height
 
-        orig_z_ref = orig_skel[self.skeleton_desc.root_joint_id][2]
-        ctx = self.create_transformer_context(transform_opts, orig_z_ref)
+        ctx = self.create_transformer_context(transform_opts)
         camera_int, img, joints3d = ctx.transform(orig_camera, orig_image, orig_skel)
 
         z_ref = joints3d[self.skeleton_desc.root_joint_id, 2]
@@ -300,7 +299,6 @@ class H36MDataset(PoseDataset):
                         'contrast': 1,
                         'saturation': 1,
                         'hue': 0,
-                        'similarity': self.coord_space == 'square',
                     }
 
                     samples.append(self._build_sample(index, orig_camera, orig_image, orig_skel,
@@ -347,7 +345,6 @@ class H36MDataset(PoseDataset):
                 'contrast': aug_contrast,
                 'saturation': aug_saturation,
                 'hue': aug_hue,
-                'similarity': self.coord_space == 'square',
             }
 
             return self._build_sample(index, orig_camera, orig_image, orig_skel, transform_opts,

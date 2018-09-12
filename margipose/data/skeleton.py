@@ -1,11 +1,9 @@
 """Utility functions for manipulating joint coordinates."""
 
-import torch
 import numpy as np
+import torch
+from pose3d_utils.coords import ensure_cartesian, ensure_homogeneous, homogeneous_to_cartesian
 from scipy.spatial import procrustes
-
-from margipose.geom import ensure_cartesian, ensure_homogeneous, homogeneous_to_cartesian
-
 
 # 14-joint skeleton used in the VNect paper for some evaluation
 VNect_Common_Skeleton = [

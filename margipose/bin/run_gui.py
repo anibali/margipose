@@ -4,9 +4,9 @@ import matplotlib
 matplotlib.use('TkAgg')
 
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2TkAgg
+import matplotlib.pyplot as plt
 from matplotlib.figure import Figure
 from mpl_toolkits.mplot3d import Axes3D
-import seaborn as sns
 import tkinter as tk
 from tkinter import ttk
 import tkinter.font
@@ -15,8 +15,8 @@ import torch
 from functools import lru_cache
 import os
 import numpy as np
+from pose3d_utils.coords import ensure_homogeneous, ensure_cartesian
 
-from margipose.geom import ensure_cartesian, ensure_homogeneous
 from margipose.data.get_dataset import get_dataset
 from margipose.data.skeleton import absolute_to_root_relative, \
     VNect_Common_Skeleton, apply_rigid_alignment, CanonicalSkeletonDesc
@@ -317,7 +317,7 @@ class MainGUIApp(tk.Tk):
             fig.clf()
             joint_index = self.dataset.skeleton_desc.joint_names.index(self.var_joint.get())
 
-            cmap = sns.cubehelix_palette(light=1, as_cmap=True)
+            cmap = plt.get_cmap('gist_yarg')
             img = self.current_example['input_image']
             hms = [
                 (3, self.current_example['xy_heatmaps'][-1][joint_index], ('x', 'y')),
@@ -373,8 +373,6 @@ def main():
     seed_all(12345)
     init_algorithms(deterministic=True)
     torch.set_grad_enabled(False)
-
-    sns.set(style="white")
 
     if args.model:
         model_state = torch.load(args.model)

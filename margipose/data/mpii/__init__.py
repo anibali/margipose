@@ -5,17 +5,17 @@ Dataset home page: http://human-pose.mpi-inf.mpg.de/
 """
 
 from os import path
-import torch
-import torch.nn.functional
+
 import h5py
 import numpy as np
+import torch
+import torch.nn.functional
 from PIL import Image
+from pose3d_utils.camera import CameraIntrinsics
 
 from margipose.data import PoseDataset
-from margipose.data_specs import DataSpecs, ImageSpecs, JointsSpecs
 from margipose.data.skeleton import SkeletonDesc, CanonicalSkeletonDesc
-from margipose.geom.camera import CameraIntrinsics
-
+from margipose.data_specs import DataSpecs, ImageSpecs, JointsSpecs
 
 MpiiSkeletonDesc = SkeletonDesc(
     joint_names=[
@@ -241,7 +241,7 @@ class MpiiDataset(PoseDataset):
         # lead to particularly prominent errors when the subject is not in
         # the original image centre.
         focal_length = orig_image.width * 1.2
-        orig_camera = CameraIntrinsics.from_ccd_params(focal_length, focal_length, 0, 0)
+        orig_camera = CameraIntrinsics.from_ccd_params(focal_length, focal_length, orig_image.width / 2, orig_image.height / 2)
         extrinsics = torch.eye(4).double()
 
         transform_opts = {
@@ -260,11 +260,10 @@ class MpiiDataset(PoseDataset):
             'contrast': aug_contrast,
             'saturation': aug_saturation,
             'hue': aug_hue,
-            'similarity': self.coord_space == 'square',
         }
 
         orig_z_ref = focal_length
-        ctx = self.create_transformer_context(transform_opts, orig_z_ref)
+        ctx = self.create_transformer_context(transform_opts)
         camera_int, img, _ = ctx.transform(orig_camera, orig_image, None)
 
         if orig_target is not None:
@@ -274,6 +273,8 @@ class MpiiDataset(PoseDataset):
 
             orig_target = torch.cat(
                 [orig_target, torch.ones_like(orig_target.narrow(-1, 0, 2))], -1)
+            orig_target[:, 0] -= orig_image.width / 2
+            orig_target[:, 1] -= orig_image.height / 2
             orig_target[:, 2] = orig_z_ref
             part_coords = ctx.point_transformer.transform(orig_target)
 

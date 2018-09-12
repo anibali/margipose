@@ -4,20 +4,21 @@
 
 
 import argparse
-import torch
 import json
-from tqdm import tqdm
+
+import torch
+from pose3d_utils.coords import ensure_homogeneous
 from tele.meter import MeanValueMeter, MedianValueMeter
+from tqdm import tqdm
 
 from margipose.data import make_dataloader, make_unbatched_dataloader
 from margipose.data.get_dataset import get_dataset
 from margipose.data.skeleton import CanonicalSkeletonDesc, VNect_Common_Skeleton
-from margipose.eval import prepare_for_3d_evaluation, gather_3d_metrics
-from margipose.utils import seed_all, init_algorithms
-from margipose.models.model_registry import model_registry_3d
-from margipose.utils import timer
-from margipose.geom import ensure_homogeneous
 from margipose.dsntnn import average_loss
+from margipose.eval import prepare_for_3d_evaluation, gather_3d_metrics
+from margipose.models.model_registry import model_registry_3d
+from margipose.utils import seed_all, init_algorithms
+from margipose.utils import timer
 
 CPU = torch.device('cpu')
 GPU = torch.device('cuda')
