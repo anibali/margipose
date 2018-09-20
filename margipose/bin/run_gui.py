@@ -50,21 +50,19 @@ def load_example(dataset, example_index):
     input_image = dataset.input_to_pil_image(input)
     camera = example['camera_intrinsic']
     transform_opts = example['transform_opts']
-    gt_skel_norm = ensure_homogeneous(example['target'], d=3)
-    gt_skel_denorm = dataset.denormalise_with_skeleton_height(gt_skel_norm, camera, transform_opts)
-    gt_skel_image_space = camera.project_cartesian(gt_skel_denorm)
-    gt_skel_camera_space = dataset.untransform_skeleton(gt_skel_denorm, transform_opts)
+    gt_skel = None
+    if 'target' in example:
+        gt_skel = dict(original=example['original_skel'])
+        gt_skel_norm = ensure_homogeneous(example['target'], d=3)
+        gt_skel_denorm = dataset.denormalise_with_skeleton_height(gt_skel_norm, camera, transform_opts)
+        gt_skel['image_space'] = camera.project_cartesian(gt_skel_denorm)
+        gt_skel['camera_space'] = dataset.untransform_skeleton(gt_skel_denorm, transform_opts)
     return dict(
         input=input,
         input_image=input_image,
         camera=camera,
         transform_opts=transform_opts,
-        target=example['target'],
-        gt_skel=dict(
-            camera_space=gt_skel_camera_space,
-            image_space=gt_skel_image_space,
-            original=example['original_skel'],
-        ),
+        gt_skel=gt_skel,
     )
 
 
@@ -156,7 +154,7 @@ class MainGUIApp(tk.Tk):
 
     @property
     def gt_visible(self):
-        return self.var_gt_visible.get() != 0
+        return self.var_gt_visible.get() != 0 and self.current_example['gt_skel'] is not None
 
     @property
     def is_aligned(self):
@@ -165,7 +163,7 @@ class MainGUIApp(tk.Tk):
     def update_current_tab(self):
         cur_tab_index = self.notebook.index('current')
 
-        if self.model is not None:
+        if self.model is not None and self.current_example['gt_skel']:
             actual = root_relative(self.current_example['pred_skel']['camera_space'])
             expected = root_relative(self.current_example['gt_skel']['original'])
 

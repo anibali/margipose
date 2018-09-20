@@ -40,5 +40,7 @@ def get_dataset(dataset_name, data_specs=None, use_aug=False) -> PoseDataset:
         return MpiiDataset('/datasets/mpii', data_specs=data_specs, subset='val', use_aug=use_aug)
     elif dataset_name == 'mpii-trainval':
         return MpiiDataset('/datasets/mpii', data_specs=data_specs, subset='trainval', use_aug=use_aug)
+    elif dataset_name == 'mpii-test':
+        return MpiiDataset('/datasets/mpii', data_specs=data_specs, subset='test', use_aug=False)
     else:
         raise Exception('unrecognised dataset: {}'.format(dataset_name))
