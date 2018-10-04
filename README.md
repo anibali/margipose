@@ -46,7 +46,7 @@ the others.
 3. Download [the original MPII dataset](http://human-pose.mpi-inf.mpg.de/) and move the
    `images/` folder into your MPII data directory.
 4. Edit the volume mounts in `docker-compose.yml` so that the absolute location of
-the MPII data is bound to `/datasets/mpii` inside the Docker container.
+   the MPII data is bound to `/datasets/mpii` inside the Docker container.
 
 ### [Optional] Configure and run Showoff
 
