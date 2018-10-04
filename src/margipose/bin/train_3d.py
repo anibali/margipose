@@ -386,6 +386,7 @@ def sacred_main(_run: Run, _seed, showoff, out_dir, batch_size, epochs, tags, mo
             state = {
                 'state_dict': model.state_dict(),
                 'model_desc': model_desc,
+                'train_datasets': train_datasets,
                 'optimizer': scheduler.optimizer.state_dict(),
                 'epoch': epoch + 1,
             }

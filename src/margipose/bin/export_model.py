@@ -42,6 +42,7 @@ def main():
         new_model_state = {
             'state_dict': model.state_dict(),
             'model_desc': model_factory.to_model_desc(),
+            'train_datasets': model_state.get('train_datasets', []),
         }
         torch.save(new_model_state, args.output)
     elif args.format == 'onnx':
