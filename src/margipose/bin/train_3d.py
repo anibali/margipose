@@ -282,8 +282,8 @@ def computed_config(quick, batch_size):
     val_examples = batch_size * 2 if quick else 1600
 
 
-@ex.automain
-def main(_run: Run, _seed, showoff, out_dir, batch_size, epochs, tags, model_desc,
+@ex.main
+def sacred_main(_run: Run, _seed, showoff, out_dir, batch_size, epochs, tags, model_desc,
          experiment_id, weights, train_examples, val_examples, deterministic,
          train_datasets, val_datasets, lr, lr_milestones, lr_gamma, optim_algorithm):
     seed_all(_seed)
@@ -399,3 +399,11 @@ def main(_run: Run, _seed, showoff, out_dir, batch_size, epochs, tags, model_des
 
     set_progress(1.0)
     return _run.result
+
+
+def main():
+    ex.run_commandline()
+
+
+if __name__ == '__main__':
+    main()

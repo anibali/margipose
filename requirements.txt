@@ -18,3 +18,4 @@ plotly==2.3.0
 git+https://github.com/anibali/pyshowoff.git@3396cb916c390886873fb0a6b8515f91c0c1574c#egg=pyshowoff
 git+https://github.com/anibali/tele.git@e2b0af5f28100abd581dbf3871bee90b178a5c98#egg=tele
 git+https://github.com/anibali/pose3d-utils@cd6185f274e5ba5fc53d5d47b99e432a22611c3d#egg=pose3d-utils
+pytest==3.8.2

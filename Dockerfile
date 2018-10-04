@@ -69,7 +69,7 @@ RUN pip uninstall -y pillow \
  && sudo rm -rf /var/lib/apt/lists/*
 
 COPY --chown=user:user . /app
-RUN pip install -e .
+RUN pip install -U .
 
 # Set the default command to python3
 CMD ["python3"]

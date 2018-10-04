@@ -61,8 +61,8 @@ ex.add_config(
 )
 
 
-@ex.automain
-def main(_run: Run, _seed, showoff, batch_size, model_desc, deterministic, train_datasets,
+@ex.main
+def sacred_main(_run: Run, _seed, showoff, batch_size, model_desc, deterministic, train_datasets,
          lr_min, lr_max, max_iters, ema_beta, weight_decay, momentum):
     seed_all(_seed)
     init_algorithms(deterministic=deterministic)
@@ -154,3 +154,11 @@ def main(_run: Run, _seed, showoff, batch_size, model_desc, deterministic, train
             tel.step()
 
     set_progress(1)
+
+
+def main():
+    ex.run_commandline()
+
+
+if __name__ == '__main__':
+    main()

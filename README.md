@@ -31,7 +31,7 @@ the others.
 #### MPI-INF-3DHP
 
 1. Download [the original MPI-INF-3DHP dataset](http://gvv.mpi-inf.mpg.de/3dhp-dataset/).
-2. Use the `bin/preprocess_mpi3d.py` script to preprocess the data.
+2. Use the `src/margipose/bin/preprocess_mpi3d.py` script to preprocess the data.
 3. Edit the volume mounts in `docker-compose.yml` so that the absolute location of
    the processed MPI-INF-3DHP data is bound to `/datasets/mpi3d` inside the Docker container.
 
@@ -72,28 +72,28 @@ MargiPose to use it.
 A `run.sh` launcher script is provided, which will run any command within a Docker container
 containing all of MargiPose's dependencies. Here are a few examples.
 
-Train a MargiPose model on the mpi3d dataset:
+Train a MargiPose model on the MPI-INF-3DHP dataset:
 
 ```bash
-./run.sh bin/train_3d.py with margipose_model 1cycle mpi3d
+./run.sh margipose-train with margipose_model 1cycle mpi3d
 ```
 
 Evaluate a model's test set performance using the second GPU:
 
 ```bash
-NVIDIA_VISIBLE_DEVICES=1 ./run.sh bin/eval_3d.py --model margipose-mpi3d.pth --dataset mpi3d-test
+NVIDIA_VISIBLE_DEVICES=1 ./run.sh margipose-eval --model margipose-mpi3d.pth --dataset mpi3d-test
 ```
 
 Explore qualitative results with a GUI:
 
 ```bash
-./run.sh bin/run_gui.py --model margipose-mpi3d.pth --dataset mpi3d-test
+./run.sh margipose-gui --model margipose-mpi3d.pth --dataset mpi3d-test
 ```
 
-Run the tests:
+Run the project unit tests:
 
 ```bash
-./run.sh python setup.py test
+./run.sh pytest
 ```
 
 ## Pretrained models

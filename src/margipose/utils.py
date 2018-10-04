@@ -9,7 +9,6 @@ from time import perf_counter
 from contextlib import contextmanager
 from subprocess import check_output
 
-
 def seed_all(seed):
     """Seed all random number generators."""
     random.seed(seed)
