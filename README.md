@@ -60,10 +60,11 @@ MargiPose to use it.
    value is recommended.
 3. From a terminal in the showoff directory, run `docker-compose up -d showoff`. This will
    start the Showoff server.
-4. Log in using the username "admin" and the password "password".
-5. Change the admin password.
-6. Open up `showoff/showoff-client.env` in a text editor.
-7. From the Showoff account page, add a new API key. Copy the API key ID and secret key
+4. Open [localhost:13000](http://localhost:13000) in your web browser.
+5. Log in using the username "admin" and the password "password".
+6. Change the admin password.
+7. Open up `showoff/showoff-client.env` in a text editor.
+8. From the Showoff account page, add a new API key. Copy the API key ID and secret key
    into `showoff-client.env` (you will need to uncomment the appropriate lines).
 
 ## Running scripts
@@ -94,6 +95,15 @@ Run the tests:
 ```bash
 ./run.sh python setup.py test
 ```
+
+## Pretrained models
+
+Pretrained models are available for download:
+
+* [margipose-mpi3d.pth](https://cloudstor.aarnet.edu.au/plus/s/fg5CCss8o9PdURs) [221.6 MB]
+  * Trained on MPI-INF-3DHP and MPII examples
+* [margipose-h36m.pth](https://cloudstor.aarnet.edu.au/plus/s/RisOjU8YwqUXFI7) [221.6 MB]
+  * Trained on Human3.6M and MPII examples
 
 ## License and citation
 
