@@ -15,7 +15,7 @@ from tele.meter import ValueMeter, MeanValueMeter
 from margipose.config import add_config_3d_models
 from margipose.dsntnn import average_loss
 from margipose.hyperparam_scheduler import make_1cycle
-from margipose.models.model_registry import model_registry_3d
+from margipose.models import create_model
 from margipose.train_helpers import visualise_predictions, progress_iter, create_showoff_notebook, \
     learning_schedule, create_train_dataloader, create_val_dataloader
 from margipose.utils import seed_all, init_algorithms, timer, generator_timer
@@ -298,16 +298,16 @@ def sacred_main(_run: Run, _seed, showoff, out_dir, batch_size, epochs, tags, mo
     # Model
     ####
 
-    model_factory = model_registry_3d.factory(model_desc)
-    model_desc = model_factory.to_model_desc()
-    print(json.dumps(model_desc, sort_keys=True, indent=2))
-
-    model = model_factory.build_model()
-    if weights is not None:
-        weights_model = torch.load(weights)
-        state_dict = weights_model['state_dict']
-        model.load_state_dict(state_dict, strict=True)
+    if weights is None:
+        model = create_model(model_desc)
+    else:
+        details = torch.load(weights)
+        model_desc = details['model_desc']
+        model = create_model(model_desc)
+        model.load_state_dict(details['state_dict'])
     model.to(GPU)
+
+    print(json.dumps(model_desc, sort_keys=True, indent=2))
 
     ####
     # Data

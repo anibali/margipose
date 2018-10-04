@@ -1,27 +1,32 @@
 from semantic_version import Version
-from abc import ABC, abstractmethod
+
+from .margipose_model import OldMargiPoseModelFactory
 
 
-class ModelFactory(ABC):
-    def __init__(self, model_desc: dict):
-        super().__init__()
-        self.type = model_desc['type']
-        self.version = Version(model_desc['version'])
-        assert self.match(self.type, self.version), 'model_desc does not match this factory'
-        self.settings = self.merge_default_settings(model_desc['settings'])
+import torch
 
-    def to_model_desc(self):
-        return dict(type=self.type, version=str(self.version), settings=self.settings)
 
-    @staticmethod
-    @abstractmethod
-    def match(type: str, version: Version):
-        pass
+MODEL_FACTORIES = [
+    OldMargiPoseModelFactory(),
+]
 
-    @abstractmethod
-    def merge_default_settings(self, settings: dict):
-        pass
 
-    @abstractmethod
-    def build_model(self):
-        pass
+def create_model(model_desc):
+    type_name = model_desc['type']
+    version = Version(model_desc['version'])
+
+    for factory in MODEL_FACTORIES:
+        if factory.is_for(type_name, version):
+            model = factory.create(model_desc)
+            break
+    else:
+        raise Exception('unrecognised model {} v{}'.format(type_name, str(version)))
+
+    return model
+
+
+def load_model(model_file):
+    details = torch.load(model_file)
+    model = create_model(details['model_desc'])
+    model.load_state_dict(details['state_dict'])
+    return model

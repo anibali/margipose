@@ -16,7 +16,7 @@ import numpy as np
 from tqdm import tqdm
 
 from margipose.config import add_config_3d_models
-from margipose.models.model_registry import model_registry_3d
+from margipose.models import create_model
 from margipose.train_helpers import create_train_dataloader, create_showoff_notebook
 from margipose.utils import seed_all, init_algorithms
 
@@ -67,13 +67,11 @@ def sacred_main(_run: Run, _seed, showoff, batch_size, model_desc, deterministic
     seed_all(_seed)
     init_algorithms(deterministic=deterministic)
 
-    model_factory = model_registry_3d.factory(model_desc)
-    model = model_factory.build_model().to(GPU)
+    model = create_model(model_desc).to(GPU)
     data_loader = create_train_dataloader(train_datasets, model.data_specs, batch_size,
                                           examples_per_epoch=(max_iters * batch_size))
     data_iter = iter(data_loader)
 
-    model_desc = model_factory.to_model_desc()
     print(json.dumps(model_desc, sort_keys=True, indent=2))
 
     def do_training_iteration(optimiser):

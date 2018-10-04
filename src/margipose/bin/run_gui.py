@@ -21,7 +21,7 @@ from margipose.data.get_dataset import get_dataset
 from margipose.data.skeleton import absolute_to_root_relative, \
     VNect_Common_Skeleton, apply_rigid_alignment, CanonicalSkeletonDesc
 from margipose.utils import plot_skeleton_on_axes3d, plot_skeleton_on_axes, seed_all, init_algorithms
-from margipose.models.model_registry import model_registry_3d
+from margipose.models import load_model
 from margipose.eval import mpjpe, pck
 from margipose.data_specs import DataSpecs, ImageSpecs, JointsSpecs
 
@@ -373,11 +373,7 @@ def main():
     torch.set_grad_enabled(False)
 
     if args.model:
-        model_state = torch.load(args.model)
-        model = model_registry_3d.factory(model_state['model_desc']).build_model()
-        model.load_state_dict(model_state['state_dict'])
-        model = model.to(GPU)
-        model.eval()
+        model = load_model(args.model).to(GPU).eval()
         data_specs = model.data_specs
     else:
         model = None

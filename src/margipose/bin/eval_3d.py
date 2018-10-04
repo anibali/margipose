@@ -16,7 +16,7 @@ from margipose.data.get_dataset import get_dataset
 from margipose.data.skeleton import CanonicalSkeletonDesc, VNect_Common_Skeleton
 from margipose.dsntnn import average_loss
 from margipose.eval import prepare_for_3d_evaluation, gather_3d_metrics
-from margipose.models.model_registry import model_registry_3d
+from margipose.models import load_model
 from margipose.utils import seed_all, init_algorithms
 from margipose.utils import timer
 
@@ -100,12 +100,7 @@ def main():
     init_algorithms(deterministic=True)
     torch.set_grad_enabled(False)
 
-    model_state = torch.load(args.model)
-    model = model_registry_3d.factory(model_state['model_desc']).build_model()
-    model.load_state_dict(model_state['state_dict'])
-    model = model.to(GPU)
-    model.eval()
-
+    model = load_model(args.model).to(GPU).eval()
     dataset = get_dataset(args.dataset, model.data_specs, use_aug=False)
 
     if args.multicrop:

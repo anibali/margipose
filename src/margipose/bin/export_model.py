@@ -8,7 +8,7 @@ import torch
 from torch import onnx
 
 from margipose.utils import seed_all, init_algorithms
-from margipose.models.model_registry import model_registry_3d
+from margipose.models import create_model
 
 
 def parse_args():
@@ -34,14 +34,14 @@ def main():
 
     # Load the model into system memory (CPU, not GPU)
     model_state = torch.load(args.input, map_location='cpu')
-    model_factory = model_registry_3d.factory(model_state['model_desc'])
-    model = model_factory.build_model()
+    model_desc = model_state['model_desc']
+    model = create_model(model_desc)
     model.load_state_dict(model_state['state_dict'])
 
     if args.format == 'pytorch':
         new_model_state = {
             'state_dict': model.state_dict(),
-            'model_desc': model_factory.to_model_desc(),
+            'model_desc': model_desc,
             'train_datasets': model_state.get('train_datasets', []),
         }
         torch.save(new_model_state, args.output)

@@ -3,9 +3,9 @@ from torch import nn
 import torchvision.models
 from pretrainedmodels.models.inceptionv4 import inceptionv4
 from margipose.dsntnn import flat_softmax, dsnt, js_reg_losses, euclidean_losses
-from semantic_version import Spec
+from semantic_version import Version, Spec
 
-from margipose.models import ModelFactory
+from margipose.model_factory import ModelFactory
 from margipose.nn_helpers import init_parameters
 from margipose.data.skeleton import CanonicalSkeletonDesc
 from margipose.data_specs import DataSpecs, ImageSpecs, JointsSpecs
@@ -326,20 +326,14 @@ class MargiPoseModel(nn.Module):
         return xyz
 
 
-class MargiPoseModelFactory(ModelFactory):
-    def __init__(self, model_desc):
-        super().__init__(model_desc)
-        # Force the type of this model to be 'margipose'
-        self.type = 'margipose'
+class OldMargiPoseModelFactory(ModelFactory):
+    def __init__(self,):
+        super().__init__('margipose', '^4.0.0,>=4.2.0')
 
-    @staticmethod
-    def match(type, version):
-        # The old name for this model is "chatterglass"
-        if type not in {'chatterglass', 'margipose'} or version not in Spec('^4.0.0,>=4.2.0'):
-            return False
-        return True
-
-    def merge_default_settings(self, settings):
+    def create(self, model_desc):
+        super()
+        settings = model_desc['settings']
+        version = Version(model_desc['version'])
         s = dict(
             coord_space=settings.get('coord_space', 'ndc'),
             n_stages=settings.get('n_stages', 4),
@@ -349,15 +343,6 @@ class MargiPoseModelFactory(ModelFactory):
             feature_extractor=settings.get('feature_extractor', 'inceptionv4'),
             average_xy=settings.get('average_xy', False),
             disable_reg=settings.get('disable_reg', False),
-            disable_dilation=settings.get('disable_dilation', self.version in Spec('>=4.2.4'))
+            disable_dilation=settings.get('disable_dilation', version in Spec('>=4.2.4'))
         )
-        # LEGACY: Support old setting names
-        if 'disable_chatterbox' in settings:
-            s['disable_permutation'] = settings['disable_chatterbox']
-        if 'bad_shrink' in settings:
-            s['bad_permutation'] = settings['bad_shrink']
-
-        return s
-
-    def build_model(self):
-        return MargiPoseModel(CanonicalSkeletonDesc, only_2d=False, **self.settings)
+        return MargiPoseModel(CanonicalSkeletonDesc, only_2d=False, **s)
