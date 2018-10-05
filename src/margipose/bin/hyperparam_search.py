@@ -1,22 +1,22 @@
 #!/usr/bin/env python3
 
-import sacred
-from sacred.run import Run
-from sacred.host_info import get_host_info
-
-import plotly.graph_objs as go
-from os import path, environ
-from torch.optim import SGD
-import torch
-from margipose.dsntnn import average_loss
 import json
-import tele
-from tele.meter import ValueMeter
+from os import path, environ
+
 import numpy as np
+import plotly.graph_objs as go
+import sacred
+import tele
+import torch
+from sacred.host_info import get_host_info
+from sacred.run import Run
+from tele.meter import ValueMeter
+from torch.optim import SGD
 from tqdm import tqdm
 
-from margipose.config import add_config_3d_models
+from margipose.dsntnn import average_loss
 from margipose.models import create_model
+from margipose.models.margipose_model import Default_MargiPose_Desc
 from margipose.train_helpers import create_train_dataloader, create_showoff_notebook
 from margipose.utils import seed_all, init_algorithms
 
@@ -44,10 +44,9 @@ def forward_loss(model, out_var, target_var, mask_var, valid_depth):
     return average_loss(losses, mask_var)
 
 
-add_config_3d_models(ex)
+ex.add_named_config('margipose_model', model_desc=Default_MargiPose_Desc)
 
 ex.add_config(
-    **ex.named_configs['margipose_model'](),
     showoff=not not environ.get('SHOWOFF_URL'),
     batch_size=32,
     deterministic=False,

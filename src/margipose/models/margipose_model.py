@@ -10,6 +10,18 @@ from margipose.data.skeleton import CanonicalSkeletonDesc
 from margipose.data_specs import DataSpecs, ImageSpecs, JointsSpecs
 
 
+Default_MargiPose_Desc = {
+    'type': 'margipose',
+    'version': '6.0.0',
+    'settings': {
+        'n_stages': 4,
+        'axis_permutation': True,
+        'feature_extractor': 'inceptionv4',
+        'pixelwise_loss': 'jsd',
+    },
+}
+
+
 class ResidualBlock(nn.Module):
     def __init__(self, chans, main_conv_in, shortcut_conv_in):
         super().__init__()

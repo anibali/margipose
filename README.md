@@ -75,7 +75,13 @@ containing all of MargiPose's dependencies. Here are a few examples.
 Train a MargiPose model on the MPI-INF-3DHP dataset:
 
 ```bash
-./run.sh margipose-train with margipose_model 1cycle mpi3d
+./run.sh margipose-train with margipose_model mpi3d
+```
+
+Train without pixel-wise loss term:
+
+```bash
+./run.sh margipose-train with margipose_model mpi3d "model_desc={'settings': {'pixelwise_loss': None}}"
 ```
 
 Evaluate a model's test set performance using the second GPU:

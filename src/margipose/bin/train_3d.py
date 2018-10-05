@@ -12,10 +12,10 @@ from sacred.host_info import get_host_info
 from sacred.run import Run
 from tele.meter import ValueMeter, MeanValueMeter
 
-from margipose.config import add_config_3d_models
 from margipose.dsntnn import average_loss
 from margipose.hyperparam_scheduler import make_1cycle
 from margipose.models import create_model
+from margipose.models.margipose_model import Default_MargiPose_Desc
 from margipose.train_helpers import visualise_predictions, progress_iter, create_showoff_notebook, \
     learning_schedule, create_train_dataloader, create_val_dataloader
 from margipose.utils import seed_all, init_algorithms, timer, generator_timer
@@ -220,51 +220,26 @@ def do_validation_pass(epoch, model, tel, loader):
     tel['val_examples'].set_value(vis_images[:8])
 
 
-add_config_3d_models(ex)
+# Predefined model configuration sets
+ex.add_named_config('margipose_model', model_desc=Default_MargiPose_Desc)
 
-# Use this config to do a quick test run
-ex.add_named_config(
-    'quick',
-    out_dir='',
-    epochs=10,
-    tags=['quick'],
-    quick=True,
-)
+# Predefined optimiser configuration sets
+ex.add_named_config('rmsprop', optim_algorithm='rmsprop', epochs=150, lr=2.5e-3,
+                    lr_milestones=[80, 140], lr_gamma=0.1)
+ex.add_named_config('1cycle', optim_algorithm='1cycle', epochs=100, lr=1.0,
+                    lr_milestones=None, lr_gamma=None)
 
-ex.add_named_config(
-    'rmsprop',
-    optim_algorithm='rmsprop',
-    epochs=150,
-    lr=2.5e-3,
-    lr_milestones=[80, 140],
-    lr_gamma=0.1,
-)
+# Predefined dataset configuration sets
+ex.add_named_config('mpi3d', train_datasets=['mpi3d-trainval', 'mpii-trainval'], val_datasets=[])
+ex.add_named_config('h36m', train_datasets=['h36m-trainval', 'mpii-trainval'], val_datasets=[])
 
-ex.add_named_config(
-    '1cycle',
-    optim_algorithm='1cycle',
-    epochs=100,
-    lr=1.0,
-    lr_milestones=None,
-    lr_gamma=None,
-)
-
-ex.add_named_config(
-    'mpi3d',
-    train_datasets=['mpi3d-trainval', 'mpii-trainval'],
-    val_datasets=[],
-)
-
-ex.add_named_config(
-    'h36m',
-    train_datasets=['h36m-trainval', 'mpii-trainval'],
-    val_datasets=[],
-)
+# Configuration for a quick run (useful for debugging)
+ex.add_named_config('quick', out_dir='', epochs=10, tags=['quick'], quick=True,
+                    train_examples=256, val_examples=128)
 
 # Configuration defaults
 ex.add_config(
     **ex.named_configs['1cycle'](),
-    **ex.named_configs['margipose_model'](),
     showoff=not not environ.get('SHOWOFF_URL'),
     out_dir='out',
     batch_size=32,
@@ -273,13 +248,9 @@ ex.add_config(
     experiment_id=datetime.datetime.now().strftime('%Y%m%d-%H%M%S%f'),
     weights=None,
     deterministic=False,
+    train_examples=32000,
+    val_examples=1600,
 )
-
-
-@ex.config
-def computed_config(quick, batch_size):
-    train_examples = batch_size * 4 if quick else 32000
-    val_examples = batch_size * 2 if quick else 1600
 
 
 @ex.main
