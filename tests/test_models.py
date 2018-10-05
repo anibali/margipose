@@ -1,11 +1,9 @@
+import torch
 from torch.testing import assert_allclose
 
-from types import SimpleNamespace
-import torch
-from margipose.dsntnn import make_gauss
-
-from margipose.models.margipose_model import HeatmapColumn, MargiPoseModel
 from margipose.data.skeleton import CanonicalSkeletonDesc
+from margipose.dsntnn import make_gauss
+from margipose.models.margipose_model import HeatmapColumn, MargiPoseModel
 
 
 def test_columns():
@@ -31,6 +29,5 @@ def test_heatmaps_to_coords():
     xy_hm = make_gauss(torch.Tensor([[[-0.5, 0.5]]]), size, sigma, normalize=True)
     zy_hm = make_gauss(torch.Tensor([[[0.1, 0]]]), size, sigma, normalize=True)
     xz_hm = make_gauss(torch.Tensor([[[0, 0.2]]]), size, sigma, normalize=True)
-    model = SimpleNamespace(average_xy=False)
-    xyz = MargiPoseModel.heatmaps_to_coords(model, xy_hm, zy_hm, xz_hm)
+    xyz = MargiPoseModel.heatmaps_to_coords(xy_hm, zy_hm, xz_hm)
     assert_allclose(xyz, torch.Tensor([[[-0.5, 0.5, 0.15]]]))

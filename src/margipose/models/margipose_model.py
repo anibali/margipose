@@ -50,17 +50,20 @@ class HeatmapColumn(nn.Module):
         init_parameters(self)
 
     def _regular_block(self, in_chans, out_chans):
-        return ResidualBlock(out_chans,
+        return ResidualBlock(
+            out_chans,
             nn.Conv2d(in_chans, out_chans, kernel_size=3, padding=1, bias=False),
             nn.Conv2d(in_chans, out_chans, kernel_size=1, bias=False))
 
     def _down_stride_block(self, in_chans, out_chans):
-        return ResidualBlock(out_chans,
+        return ResidualBlock(
+            out_chans,
             nn.Conv2d(in_chans, out_chans, kernel_size=3, padding=1, stride=2, bias=False),
             nn.Conv2d(in_chans, out_chans, kernel_size=1, stride=2, bias=False))
 
     def _up_stride_block(self, in_chans, out_chans):
-        return ResidualBlock(out_chans,
+        return ResidualBlock(
+            out_chans,
             nn.ConvTranspose2d(in_chans, out_chans, kernel_size=3, padding=1, stride=2,
                                output_padding=1, bias=False),
             nn.ConvTranspose2d(in_chans, out_chans, kernel_size=1, stride=2,
@@ -169,21 +172,20 @@ class MargiPoseModelInner(nn.Module):
             zy_heatmaps.append(flat_softmax(self.zy_hm_cnns[t](inp)))
             xz_heatmaps.append(flat_softmax(self.xz_hm_cnns[t](inp)))
 
-        return (xy_heatmaps, zy_heatmaps, xz_heatmaps)
+        return xy_heatmaps, zy_heatmaps, xz_heatmaps
 
 
 class MargiPoseModel(nn.Module):
     def __init__(self, skel_desc, n_stages, axis_permutation, feature_extractor, pixelwise_loss):
         super().__init__()
-
         self.data_specs = DataSpecs(
             ImageSpecs(256, mean=ImageSpecs.IMAGENET_MEAN, stddev=ImageSpecs.IMAGENET_STDDEV),
             JointsSpecs(skel_desc, n_dims=3),
         )
         self.pixelwise_loss = pixelwise_loss
-
         self.inner = MargiPoseModelInner(skel_desc.n_joints, n_stages, axis_permutation,
                                          feature_extractor)
+        self.xy_heatmaps = self.zy_heatmaps = self.xz_heatmaps = None
 
     def _calculate_pixelwise_loss(self, hm, target_coords):
         sigma = 1.0
@@ -218,7 +220,8 @@ class MargiPoseModel(nn.Module):
 
         return losses
 
-    def heatmaps_to_coords(self, xy_hm, zy_hm, xz_hm):
+    @staticmethod
+    def heatmaps_to_coords(xy_hm, zy_hm, xz_hm):
         xy = dsnt(xy_hm)
         zy = dsnt(zy_hm)
         xz = dsnt(xz_hm)
@@ -228,7 +231,8 @@ class MargiPoseModel(nn.Module):
 
     def forward(self, *inputs):
         self.xy_heatmaps, self.zy_heatmaps, self.xz_heatmaps = self.inner(*inputs)
-        xyz = self.heatmaps_to_coords(self.xy_heatmaps[-1], self.zy_heatmaps[-1], self.xz_heatmaps[-1])
+        xyz = self.heatmaps_to_coords(self.xy_heatmaps[-1], self.zy_heatmaps[-1],
+                                      self.xz_heatmaps[-1])
         return xyz
 
 
