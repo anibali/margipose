@@ -254,10 +254,10 @@ ex.add_config(
 
 
 @ex.main
-def sacred_main(_run: Run, _seed, showoff, out_dir, batch_size, epochs, tags, model_desc,
+def sacred_main(_run: Run, seed, showoff, out_dir, batch_size, epochs, tags, model_desc,
          experiment_id, weights, train_examples, val_examples, deterministic,
          train_datasets, val_datasets, lr, lr_milestones, lr_gamma, optim_algorithm):
-    seed_all(_seed)
+    seed_all(seed)
     init_algorithms(deterministic=deterministic)
 
     exp_out_dir = None

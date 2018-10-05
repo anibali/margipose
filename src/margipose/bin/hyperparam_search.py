@@ -61,9 +61,9 @@ ex.add_config(
 
 
 @ex.main
-def sacred_main(_run: Run, _seed, showoff, batch_size, model_desc, deterministic, train_datasets,
+def sacred_main(_run: Run, seed, showoff, batch_size, model_desc, deterministic, train_datasets,
          lr_min, lr_max, max_iters, ema_beta, weight_decay, momentum):
-    seed_all(_seed)
+    seed_all(seed)
     init_algorithms(deterministic=deterministic)
 
     model = create_model(model_desc).to(GPU)
