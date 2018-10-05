@@ -125,7 +125,7 @@ class MpiInf3dDataset(PoseDataset):
         if data_specs is None:
             data_specs = DataSpecs(
                 ImageSpecs(224, mean=ImageSpecs.IMAGENET_MEAN, stddev=ImageSpecs.IMAGENET_STDDEV),
-                JointsSpecs(MpiInf3dhpSkeletonDesc, n_dims=3, coord_space='square'),
+                JointsSpecs(MpiInf3dhpSkeletonDesc, n_dims=3),
             )
 
         super().__init__(data_specs)

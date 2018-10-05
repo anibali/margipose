@@ -1,13 +1,13 @@
 from semantic_version import Version
 
-from .margipose_model import OldMargiPoseModelFactory
+from .margipose_model import MargiPoseModelFactory
 
 
 import torch
 
 
 MODEL_FACTORIES = [
-    OldMargiPoseModelFactory(),
+    MargiPoseModelFactory(),
 ]
 
 

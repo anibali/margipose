@@ -1,4 +1,3 @@
-import sys
 import PIL.Image
 import torchvision.transforms.functional as tr
 from collections import Sequence
@@ -42,56 +41,11 @@ class ImageSpecs:
     def unconvert(self, tensor):
         return tr.to_pil_image(denormalize_pixels(tensor.clone(), self.mean, self.stddev), 'RGB')
 
-    def to_dict(self):
-        return {
-            'type': self.__class__.__name__,
-            'height': self.height,
-            'width': self.width,
-            'mean': self.mean,
-            'stddev': self.stddev,
-        }
-
-    @classmethod
-    def from_dict(cls, d):
-        keys = ['mean', 'stddev']
-        kwargs = { k: d[k] for k in keys }
-        return cls((d['height'], d['width']), **kwargs)
-
 
 class JointsSpecs:
-    # There are different ways of normalising coordinates.
-    # * square: Axes are aligned with camera space axes.
-    # * xy_perspective: Z-axis is aligned with camera space Z-axis. XY-coords
-    #                   are perspective corrected (consistent in image space).
-    # * ndc: Normalised device coordinates. XY are like "xy_perspective", Z is
-    #        is like "square".
-    _Valid_Coord_Spaces = ['square', 'xy_perspective', 'ndc']
-
-    def __init__(self, skeleton_desc, n_dims=3, coord_space='square'):
-        assert coord_space in self._Valid_Coord_Spaces, 'invalid coord_space'
+    def __init__(self, skeleton_desc, n_dims=3):
         self.skeleton_desc = skeleton_desc
         self.n_dims = n_dims
-        self.coord_space = coord_space
-
-    def to_dict(self):
-        return {
-            'type': self.__class__.__name__,
-            'skeleton_desc': self.skeleton_desc.to_dict(),
-            'n_dims': self.n_dims,
-            'coord_space': self.coord_space,
-        }
-
-    @classmethod
-    def from_dict(cls, d):
-        from margipose.data.skeleton import SkeletonDesc
-        n_dims = d['n_dims']
-        coord_space = d['coord_space']
-        return cls(SkeletonDesc.from_dict(d['skeleton_desc']),
-                   n_dims=n_dims, coord_space=coord_space)
-
-
-def _deserialise(d):
-    return getattr(sys.modules[__name__], d['type']).from_dict(d)
 
 
 class DataSpecs:
@@ -108,13 +62,3 @@ class DataSpecs:
     @property
     def output_specs(self):
         return self._output_specs
-
-    def to_dict(self):
-        return {
-            'input': self._input_specs.to_dict(),
-            'output': self._output_specs.to_dict(),
-        }
-
-    @classmethod
-    def from_dict(cls, d):
-        return cls(_deserialise(d['input']), _deserialise(d['output']))

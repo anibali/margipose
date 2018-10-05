@@ -379,7 +379,7 @@ def main():
         model = None
         data_specs = DataSpecs(
             ImageSpecs(224, mean=ImageSpecs.IMAGENET_MEAN, stddev=ImageSpecs.IMAGENET_STDDEV),
-            JointsSpecs(CanonicalSkeletonDesc, n_dims=3, coord_space='ndc'),
+            JointsSpecs(CanonicalSkeletonDesc, n_dims=3),
         )
 
     dataset = get_dataset(args.dataset, data_specs, use_aug=False)

@@ -3,7 +3,6 @@ from torch import nn
 import torchvision.models
 from pretrainedmodels.models.inceptionv4 import inceptionv4
 from margipose.dsntnn import flat_softmax, dsnt, js_reg_losses, euclidean_losses
-from semantic_version import Version, Spec
 
 from margipose.model_factory import ModelFactory
 from margipose.nn_helpers import init_parameters
@@ -12,129 +11,60 @@ from margipose.data_specs import DataSpecs, ImageSpecs, JointsSpecs
 
 
 class ResidualBlock(nn.Module):
-    def __init__(self, module, shortcut=None):
+    def __init__(self, chans, main_conv_in, shortcut_conv_in):
         super().__init__()
-        self.module = module
-        if shortcut is None:
-            shortcut = lambda x: x
-        self.shortcut = shortcut
+        assert main_conv_in.in_channels == shortcut_conv_in.in_channels
+        self.module = nn.Sequential(
+            main_conv_in,
+            nn.BatchNorm2d(chans),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(chans, chans, kernel_size=3, padding=1, bias=False),
+            nn.BatchNorm2d(chans),
+            nn.ReLU(inplace=True),
+        )
+        self.shortcut = nn.Sequential(shortcut_conv_in, nn.BatchNorm2d(chans))
 
     def forward(self, *inputs):
         return self.module(inputs[0]) + self.shortcut(inputs[0])
 
 
-class ConvFactory():
-    def __init__(self, disable_dilation):
-        self.d = 1
-        if disable_dilation:
-            self.dilation_factor = 1
-        else:
-            self.dilation_factor = 2
-
-    def conv3x3(self, in_chans, out_chans):
-        return nn.Conv2d(in_chans, out_chans, kernel_size=3, padding=self.d, dilation=self.d,
-                         bias=False)
-
-    def down_dilate(self, in_chans, out_chans):
-        module = self.conv3x3(in_chans, out_chans)
-        self.d *= self.dilation_factor
-        return module
-
-    def down_stride(self, in_chans, out_chans):
-        return nn.Conv2d(in_chans, out_chans, kernel_size=3, padding=self.d, stride=2,
-                         dilation=self.d, bias=False)
-
-    def down_dilate_block(self, in_chans, out_chans):
-        module = nn.Sequential(
-            self.down_dilate(in_chans, out_chans),
-            nn.BatchNorm2d(out_chans),
-            nn.ReLU(inplace=True),
-            self.conv3x3(out_chans, out_chans),
-             nn.BatchNorm2d(out_chans),
-            nn.ReLU(inplace=True),
-        )
-        shortcut = nn.Sequential(
-            nn.Conv2d(in_chans, out_chans, kernel_size=1, bias=False),
-            nn.BatchNorm2d(out_chans),
-        )
-        return ResidualBlock(module, shortcut)
-
-    def down_stride_block(self, in_chans, out_chans):
-        module = nn.Sequential(
-            self.down_stride(in_chans, out_chans),
-            nn.BatchNorm2d(out_chans),
-            nn.ReLU(inplace=True),
-            self.conv3x3(out_chans, out_chans),
-             nn.BatchNorm2d(out_chans),
-            nn.ReLU(inplace=True),
-        )
-        shortcut = nn.Sequential(
-            nn.Conv2d(in_chans, out_chans, kernel_size=1, stride=2, bias=False),
-            nn.BatchNorm2d(out_chans),
-        )
-        return ResidualBlock(module, shortcut)
-
-    def up_dilate(self, in_chans, out_chans):
-        module = self.conv3x3(in_chans, out_chans)
-        self.d //= self.dilation_factor
-        return module
-
-    def up_stride(self, in_chans, out_chans):
-        return nn.ConvTranspose2d(in_chans, out_chans, kernel_size=3, padding=self.d, stride=2,
-                                  output_padding=1, dilation=self.d, bias=False)
-
-    def up_dilate_block(self, in_chans, out_chans):
-        module = nn.Sequential(
-            self.up_dilate(in_chans, out_chans),
-            nn.BatchNorm2d(out_chans),
-            nn.ReLU(inplace=True),
-            self.conv3x3(out_chans, out_chans),
-             nn.BatchNorm2d(out_chans),
-            nn.ReLU(inplace=True),
-        )
-        shortcut = nn.Sequential(
-            nn.Conv2d(in_chans, out_chans, kernel_size=1, bias=False),
-            nn.BatchNorm2d(out_chans),
-        )
-        return ResidualBlock(module, shortcut)
-
-    def up_stride_block(self, in_chans, out_chans):
-        module = nn.Sequential(
-            self.up_stride(in_chans, out_chans),
-            nn.BatchNorm2d(out_chans),
-            nn.ReLU(inplace=True),
-            self.conv3x3(out_chans, out_chans),
-             nn.BatchNorm2d(out_chans),
-            nn.ReLU(inplace=True),
-        )
-        shortcut = nn.Sequential(
-            nn.ConvTranspose2d(in_chans, out_chans, kernel_size=1, stride=2, output_padding=1, bias=False),
-            nn.BatchNorm2d(out_chans),
-        )
-        return ResidualBlock(module, shortcut)
-
-
 class HeatmapColumn(nn.Module):
-    def __init__(self, n_joints, heatmap_space, disable_dilation):
+    def __init__(self, n_joints, heatmap_space):
         super().__init__()
         self.n_joints = n_joints
         self.heatmap_space = heatmap_space
-        cf = ConvFactory(disable_dilation)
         self.down_layers = nn.Sequential(
-            cf.down_dilate_block(128, 128),
-            cf.down_dilate_block(128, 128),
-            cf.down_stride_block(128, 192),
-            cf.down_dilate_block(192, 192),
-            cf.down_dilate_block(192, 192),
+            self._regular_block(128, 128),
+            self._regular_block(128, 128),
+            self._down_stride_block(128, 192),
+            self._regular_block(192, 192),
+            self._regular_block(192, 192),
         )
         self.up_layers = nn.Sequential(
-            cf.up_dilate_block(192, 192),
-            cf.up_dilate_block(192, 192),
-            cf.up_stride_block(192, 128),
-            cf.up_dilate_block(128, 128),
-            cf.up_dilate_block(128, self.n_joints),
+            self._regular_block(192, 192),
+            self._regular_block(192, 192),
+            self._up_stride_block(192, 128),
+            self._regular_block(128, 128),
+            self._regular_block(128, self.n_joints),
         )
         init_parameters(self)
+
+    def _regular_block(self, in_chans, out_chans):
+        return ResidualBlock(out_chans,
+            nn.Conv2d(in_chans, out_chans, kernel_size=3, padding=1, bias=False),
+            nn.Conv2d(in_chans, out_chans, kernel_size=1, bias=False))
+
+    def _down_stride_block(self, in_chans, out_chans):
+        return ResidualBlock(out_chans,
+            nn.Conv2d(in_chans, out_chans, kernel_size=3, padding=1, stride=2, bias=False),
+            nn.Conv2d(in_chans, out_chans, kernel_size=1, stride=2, bias=False))
+
+    def _up_stride_block(self, in_chans, out_chans):
+        return ResidualBlock(out_chans,
+            nn.ConvTranspose2d(in_chans, out_chans, kernel_size=3, padding=1, stride=2,
+                               output_padding=1, bias=False),
+            nn.ConvTranspose2d(in_chans, out_chans, kernel_size=1, stride=2,
+                               output_padding=1, bias=False))
 
     def forward(self, *inputs):
         mid_in = self.down_layers(inputs[0])
@@ -143,13 +73,9 @@ class HeatmapColumn(nn.Module):
         if self.heatmap_space == 'xy':
             mid_out = mid_in
         elif self.heatmap_space == 'zy':
-            mid_out = torch.cat(
-                [t.permute(0, 3, 2, 1) for t in mid_in.split(size, -3)],
-            -3)
+            mid_out = torch.cat([t.permute(0, 3, 2, 1) for t in mid_in.split(size, -3)], -3)
         elif self.heatmap_space == 'xz':
-            mid_out = torch.cat(
-                [t.permute(0, 2, 1, 3) for t in mid_in.split(size, -3)],
-            -3)
+            mid_out = torch.cat([t.permute(0, 2, 1, 3) for t in mid_in.split(size, -3)], -3)
         else:
             raise Exception()
         return self.up_layers(mid_out)
@@ -197,8 +123,7 @@ class HeatmapCombiner(nn.Module):
 
 
 class MargiPoseModelInner(nn.Module):
-    def __init__(self, n_joints, n_stages, bad_permutation, disable_permutation,
-                 feature_extractor, disable_dilation):
+    def __init__(self, n_joints, n_stages, axis_permutation, feature_extractor):
         super().__init__()
 
         self.n_stages = n_stages
@@ -209,22 +134,19 @@ class MargiPoseModelInner(nn.Module):
         self.hm_combiners = nn.ModuleList()
 
         xy = 'xy'
-        if disable_permutation:
-            zy = 'xy'
-            xz = 'xy'
-        elif bad_permutation:
-            zy = 'xz'
-            xz = 'zy'
-        else:
+        if axis_permutation:
             zy = 'zy'
             xz = 'xz'
+        else:
+            zy = 'xy'
+            xz = 'xy'
 
         for t in range(self.n_stages):
             if t > 0:
                 self.hm_combiners.append(HeatmapCombiner(n_joints))
-            self.xy_hm_cnns.append(HeatmapColumn(n_joints, heatmap_space=xy, disable_dilation=disable_dilation))
-            self.zy_hm_cnns.append(HeatmapColumn(n_joints, heatmap_space=zy, disable_dilation=disable_dilation))
-            self.xz_hm_cnns.append(HeatmapColumn(n_joints, heatmap_space=xz, disable_dilation=disable_dilation))
+            self.xy_hm_cnns.append(HeatmapColumn(n_joints, heatmap_space=xy))
+            self.zy_hm_cnns.append(HeatmapColumn(n_joints, heatmap_space=zy))
+            self.xz_hm_cnns.append(HeatmapColumn(n_joints, heatmap_space=xz))
 
     def forward(self, *inputs):
         features = self.in_cnn(inputs[0])
@@ -251,45 +173,37 @@ class MargiPoseModelInner(nn.Module):
 
 
 class MargiPoseModel(nn.Module):
-    def __init__(self, skel_desc, only_2d=False, coord_space='ndc', n_stages=4,
-                 bad_permutation=False, disable_permutation=False, data_parallel=False,
-                 feature_extractor='inceptionv4', average_xy=False, disable_dilation=False,
-                 disable_reg=False):
+    def __init__(self, skel_desc, n_stages, axis_permutation, feature_extractor, pixelwise_loss):
         super().__init__()
 
         self.data_specs = DataSpecs(
             ImageSpecs(256, mean=ImageSpecs.IMAGENET_MEAN, stddev=ImageSpecs.IMAGENET_STDDEV),
-            JointsSpecs(skel_desc, n_dims=3, coord_space=coord_space),
+            JointsSpecs(skel_desc, n_dims=3),
         )
-        self.only_2d = only_2d
-        self.average_xy = average_xy
-        self.disable_reg = disable_reg
+        self.pixelwise_loss = pixelwise_loss
 
-        self.inner = MargiPoseModelInner(skel_desc.n_joints, n_stages, bad_permutation,
-                                         disable_permutation, feature_extractor, disable_dilation)
-        if data_parallel:
-            self.inner = nn.DataParallel(self.inner)
+        self.inner = MargiPoseModelInner(skel_desc.n_joints, n_stages, axis_permutation,
+                                         feature_extractor)
 
-    def _sigma(self):
-        return 1.0
+    def _calculate_pixelwise_loss(self, hm, target_coords):
+        sigma = 1.0
+        if self.pixelwise_loss == 'jsd':
+            return js_reg_losses(hm, target_coords, sigma)
+        elif self.pixelwise_loss is None:
+            return 0
+        raise Exception('unrecognised pixelwise loss: {}'.format(self.pixelwise_loss))
 
     def forward_2d_losses(self, out_var, target_var):
-        sigma = self._sigma()
-
         target_xy = target_var.narrow(-1, 0, 2)
         losses = 0
 
         for xy_hm, zy_hm, xz_hm in zip(self.xy_heatmaps, self.zy_heatmaps, self.xz_heatmaps):
-            if not self.disable_reg:
-                losses += js_reg_losses(xy_hm, target_xy, sigma)
-            pred_xy = self.heatmaps_to_coords(xy_hm, zy_hm, xz_hm).narrow(-1, 0, 2)
-            losses += euclidean_losses(pred_xy, target_xy)
+            losses += self._calculate_pixelwise_loss(xy_hm, target_xy)
+            losses += euclidean_losses(out_var.narrow(-1, 0, 2), target_xy)
 
         return losses
 
     def forward_3d_losses(self, out_var, target_var):
-        sigma = self._sigma()
-
         target_xyz = target_var.narrow(-1, 0, 3)
         losses = 0
 
@@ -297,12 +211,10 @@ class MargiPoseModel(nn.Module):
         target_zy = torch.cat([target_xyz.narrow(-1, 2, 1), target_xyz.narrow(-1, 1, 1)], -1)
         target_xz = torch.cat([target_xyz.narrow(-1, 0, 1), target_xyz.narrow(-1, 2, 1)], -1)
         for xy_hm, zy_hm, xz_hm in zip(self.xy_heatmaps, self.zy_heatmaps, self.xz_heatmaps):
-            if not self.disable_reg:
-                losses += js_reg_losses(xy_hm, target_xy, sigma)
-                losses += js_reg_losses(zy_hm, target_zy, sigma)
-                losses += js_reg_losses(xz_hm, target_xz, sigma)
-            pred_xyz = self.heatmaps_to_coords(xy_hm, zy_hm, xz_hm)
-            losses += euclidean_losses(pred_xyz, target_xyz)
+            losses += self._calculate_pixelwise_loss(xy_hm, target_xy)
+            losses += self._calculate_pixelwise_loss(zy_hm, target_zy)
+            losses += self._calculate_pixelwise_loss(xz_hm, target_xz)
+            losses += euclidean_losses(out_var, target_xyz)
 
         return losses
 
@@ -310,39 +222,28 @@ class MargiPoseModel(nn.Module):
         xy = dsnt(xy_hm)
         zy = dsnt(zy_hm)
         xz = dsnt(xz_hm)
-        if self.average_xy:
-            x = 0.5 * (xy[:, :, 0:1] + xz[:, :, 0:1])
-            y = 0.5 * (xy[:, :, 1:2] + zy[:, :, 1:2])
-        else:
-            x, y = xy.split(1, -1)
+        x, y = xy.split(1, -1)
         z = 0.5 * (zy[:, :, 0:1] + xz[:, :, 1:2])
         return torch.cat([x, y, z], -1)
 
     def forward(self, *inputs):
         self.xy_heatmaps, self.zy_heatmaps, self.xz_heatmaps = self.inner(*inputs)
         xyz = self.heatmaps_to_coords(self.xy_heatmaps[-1], self.zy_heatmaps[-1], self.xz_heatmaps[-1])
-        if self.only_2d:
-            return xyz.narrow(-1, 0, 2)
         return xyz
 
 
-class OldMargiPoseModelFactory(ModelFactory):
+class MargiPoseModelFactory(ModelFactory):
     def __init__(self,):
-        super().__init__('margipose', '^4.0.0,>=4.2.0')
+        super().__init__('margipose', '^6.0.0')
 
     def create(self, model_desc):
         super()
-        settings = model_desc['settings']
-        version = Version(model_desc['version'])
-        s = dict(
-            coord_space=settings.get('coord_space', 'ndc'),
-            n_stages=settings.get('n_stages', 4),
-            bad_permutation=settings.get('bad_permutation', False),
-            disable_permutation=settings.get('disable_permutation', False),
-            data_parallel=settings.get('data_parallel', False),
-            feature_extractor=settings.get('feature_extractor', 'inceptionv4'),
-            average_xy=settings.get('average_xy', False),
-            disable_reg=settings.get('disable_reg', False),
-            disable_dilation=settings.get('disable_dilation', version in Spec('>=4.2.4'))
+        s = model_desc['settings']
+        kwargs = dict(
+            skel_desc=CanonicalSkeletonDesc,
+            n_stages=s.get('n_stages', 4),
+            axis_permutation=s.get('axis_permutation', True),
+            feature_extractor=s.get('feature_extractor', 'inceptionv4'),
+            pixelwise_loss=s.get('pixelwise_loss', 'jsd'),
         )
-        return MargiPoseModel(CanonicalSkeletonDesc, only_2d=False, **s)
+        return MargiPoseModel(**kwargs)

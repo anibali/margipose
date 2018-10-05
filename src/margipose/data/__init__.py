@@ -22,7 +22,6 @@ from margipose.utils import seed_all
 class PoseDataset(Dataset, metaclass=ABCMeta):
     def __init__(self, data_specs: DataSpecs):
         self.data_specs = data_specs
-        assert self.coord_space == 'ndc'
         self.skeleton_normaliser = SkeletonNormaliser()
 
     def sampler(self, examples_per_epoch=None):
@@ -44,11 +43,6 @@ class PoseDataset(Dataset, metaclass=ABCMeta):
 
     def input_to_tensor(self, img):
         return self.data_specs.input_specs.convert(img)
-
-    @property
-    def coord_space(self):
-        """Type of normalised coordinates used."""
-        return self.data_specs.output_specs.coord_space
 
     @property
     def skeleton_desc(self) -> SkeletonDesc:

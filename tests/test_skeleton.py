@@ -1,4 +1,3 @@
-import unittest
 from .common import TestCase
 from .data import UnitTestData as D
 
@@ -91,7 +90,3 @@ class TestSkeleton(TestCase):
         self.assertEqual(pelvis, torch.Tensor([0, 0, 0, 1]))
         self.assertEqual(lshoulder[2].item(), 0)
         self.assertEqual(rshoulder[2].item(), 0)
-
-
-if __name__ == '__main__':
-    unittest.main()

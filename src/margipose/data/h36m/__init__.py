@@ -111,7 +111,7 @@ class H36MDataset(PoseDataset):
         if data_specs is None:
             data_specs = DataSpecs(
                 ImageSpecs(224, mean=ImageSpecs.IMAGENET_MEAN, stddev=ImageSpecs.IMAGENET_STDDEV),
-                JointsSpecs(H36MSkeletonDesc, n_dims=2, coord_space='square'),
+                JointsSpecs(H36MSkeletonDesc, n_dims=2),
             )
 
         super().__init__(data_specs)
@@ -361,7 +361,7 @@ if __name__ == '__main__':
 
     data_specs = DataSpecs(
         ImageSpecs(224, mean=ImageSpecs.IMAGENET_MEAN, stddev=ImageSpecs.IMAGENET_STDDEV),
-        JointsSpecs(CanonicalSkeletonDesc, n_dims=2, coord_space='ndc'),
+        JointsSpecs(CanonicalSkeletonDesc, n_dims=2),
     )
     dataset = H36MDataset('/datasets/h36m', data_specs=data_specs, subset='trainval')
     sample = dataset[10]

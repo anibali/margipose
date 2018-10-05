@@ -6,9 +6,11 @@ def add_config_3d_models(ex: Experiment):
 
     ex.add_named_config('margipose_model', model_desc={
         'type': 'margipose',
-        'version': '4.2.4',
+        'version': '6.0.0',
         'settings': {
-            'coord_space': 'ndc',
             'n_stages': 4,
+            'axis_permutation': True,
+            'feature_extractor': 'inceptionv4',
+            'pixelwise_loss': 'jsd',
         },
     })

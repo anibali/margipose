@@ -1,4 +1,3 @@
-import unittest
 from .common import TestCase
 from .data import UnitTestData as D
 
@@ -30,7 +29,3 @@ class TestMpiInf3dhp(TestCase):
 
         actual = MpiInf3dDataset._mpi_inf_3dhp_to_canonical_skeleton(skel)
         self.assertEqual(actual, expected)
-
-
-if __name__ == '__main__':
-    unittest.main()
