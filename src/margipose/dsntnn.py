@@ -7,20 +7,9 @@ from operator import mul
 
 import torch
 import torch.nn.functional
-from torch.autograd import Variable
 
 
-def _type_as(tensor, other, requires_grad=False):
-    """Type a tensor to match the type of another object.
-
-    If `other` is a Variable, `tensor` will be wrapped in a Variable also.
-    """
-    if isinstance(other, Variable):
-        tensor = Variable(tensor, requires_grad=requires_grad)
-    return tensor.type_as(other)
-
-
-def _normalized_linspace(length, type_as):
+def _normalized_linspace(length, dtype=None, device=None):
     """Generate a vector with values ranging from -1 to 1.
 
     Note that the values correspond to the "centre" of each cell, so
@@ -35,15 +24,15 @@ def _normalized_linspace(length, type_as):
 
     Args:
         length: The length of the vector
-        type_as: An object to type the vector as
+        dtype: Data type of vector elements
+        device: Device to store vector on
 
     Returns:
         The generated vector
     """
     first = -(length - 1) / length
     last = (length - 1) / length
-    vec = torch.linspace(first, last, length)
-    return _type_as(vec, type_as)
+    return torch.linspace(first, last, length, dtype=dtype, device=device)
 
 
 def _coord_expectation(heatmaps, dim, transform=None):
@@ -59,7 +48,7 @@ def _coord_expectation(heatmaps, dim, transform=None):
     """
 
     dim_size = heatmaps.size()[dim]
-    own_coords = _normalized_linspace(dim_size, type_as=heatmaps)
+    own_coords = _normalized_linspace(dim_size, dtype=heatmaps.dtype, device=heatmaps.device)
     if transform:
         own_coords = transform(own_coords)
     summed = heatmaps.view(-1, *heatmaps.size()[2:])
@@ -177,7 +166,8 @@ def make_gauss(means, size, sigma, normalize=True):
     """
 
     dim_range = range(-1, -(len(size) + 1), -1)
-    coords_list = [_normalized_linspace(s, type_as=means) for s in reversed(size)]
+    coords_list = [_normalized_linspace(s, dtype=means.dtype, device=means.device)
+                   for s in reversed(size)]
 
     # PDF = exp(-(x - \mu)^2 / (2 \sigma^2))
 
