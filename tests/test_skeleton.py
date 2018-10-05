@@ -4,7 +4,7 @@ from torch.testing import assert_allclose
 
 from margipose.data.skeleton import spherical_to_cartesian, cartesian_to_spherical, \
     absolute_to_root_relative, absolute_to_parent_relative, parent_relative_to_absolute, \
-    limb_dirs_to_skeleton, CanonicalSkeletonDesc, canonicalise_orientation
+    CanonicalSkeletonDesc, canonicalise_orientation
 
 
 def test_spherical_to_cartesian():
@@ -67,18 +67,6 @@ def test_parent_relative_to_absolute():
     ])
     actual = parent_relative_to_absolute(relative, joint_tree)
     assert_allclose(actual, expected)
-
-
-def test_limb_dirs_to_skeleton(skeleton_canonical_univ):
-    root_joint_id = CanonicalSkeletonDesc.root_joint_id
-    skeleton = absolute_to_root_relative(skeleton_canonical_univ, root_joint_id)
-    joint_tree = CanonicalSkeletonDesc.joint_tree
-    limbs = [(j, parent) for j, parent in enumerate(joint_tree) if j != parent]
-    limb_dirs = absolute_to_parent_relative(skeleton, joint_tree)\
-        .index_select(-2, torch.LongTensor([j for j, _ in limbs]))
-    limb_dirs.div_(-limb_dirs.norm(2, -1, keepdim=True))
-    actual = limb_dirs_to_skeleton(limb_dirs, limbs)
-    assert_allclose(actual, skeleton.narrow(-1, 0, 3), rtol=0, atol=200)
 
 
 def test_canonicalise_orientation(skeleton_canonical_univ):

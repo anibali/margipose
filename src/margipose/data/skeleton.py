@@ -111,42 +111,6 @@ def spherical_to_cartesian(spherical):
     return torch.stack([x, y, z], -1)
 
 
-def limb_dirs_to_skeleton(limb_dirs, limbs):
-    # FIXME: Make this work for batched data too
-    assert limb_dirs.dim() == 2
-
-    univ_lengths = {
-        'head_top': 0.272074,
-        'neck': 0.266811,
-        'right_shoulder': 0.154205,
-        'left_shoulder': 0.154205,
-        'right_elbow': 0.320629,
-        'left_elbow': 0.320629,
-        'right_wrist': 0.245508,
-        'left_wrist': 0.245508,
-        'right_hip': 0.128230,
-        'left_hip': 0.128230,
-        'right_knee': 0.491465,
-        'left_knee': 0.491465,
-        'right_ankle': 0.397075,
-        'left_ankle': 0.397075,
-        'spine': 0.242396,
-        'head': 0.092651,
-    }
-    skeleton_height = 920
-
-    joint_names = CanonicalSkeletonDesc.joint_names
-    joint_tree = CanonicalSkeletonDesc.joint_tree
-    limb_lens = limb_dirs.new([univ_lengths[joint_names[j]] for j, _ in limbs])
-
-    parent_relative = limb_dirs.new(CanonicalSkeletonDesc.n_joints, 3).zero_()
-    unscattered = -limb_dirs.narrow(-1, 0, 3) * limb_lens.unsqueeze(-1) * skeleton_height
-    indices = torch.LongTensor([j for j, _ in limbs]).unsqueeze(-1).expand_as(unscattered)
-    parent_relative.scatter_(-2, indices, unscattered)
-    absolute = parent_relative_to_absolute(parent_relative, joint_tree)
-    return absolute
-
-
 def calc_relative_scale(skeleton, ref_bone_lengths, joint_tree) -> (float, float):
     """Calculate the factor by which the reference is larger than the query skeleton.
 
