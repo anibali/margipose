@@ -16,6 +16,7 @@ from functools import lru_cache
 import os
 import numpy as np
 from pose3d_utils.coords import ensure_homogeneous, ensure_cartesian
+import sys
 
 from margipose.data.get_dataset import get_dataset
 from margipose.data.skeleton import absolute_to_root_relative, \
@@ -29,16 +30,17 @@ CPU = torch.device('cpu')
 GPU = torch.device('cuda')
 
 
-def parse_args():
+def parse_args(argv):
     """Parse command-line arguments."""
 
-    parser = argparse.ArgumentParser(description='3D human pose model evaluator')
+    parser = argparse.ArgumentParser(prog='margipose-gui',
+                                     description='3D human pose browser GUI')
     parser.add_argument('--model', type=str, metavar='FILE',
                         help='path to model file')
     parser.add_argument('--dataset', type=str, metavar='STR', default='mpi3d-test',
                         help='dataset name')
 
-    args = parser.parse_args()
+    args = parser.parse_args(argv[1:])
 
     return args
 
@@ -366,8 +368,8 @@ class MainGUIApp(tk.Tk):
         self.update_current_tab()
 
 
-def main():
-    args = parse_args()
+def main(argv=sys.argv):
+    args = parse_args(argv)
     seed_all(12345)
     init_algorithms(deterministic=True)
     torch.set_grad_enabled(False)

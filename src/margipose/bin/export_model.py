@@ -4,14 +4,16 @@
 
 
 import argparse
+import sys
+
 import torch
 from torch import onnx
 
-from margipose.utils import seed_all, init_algorithms
 from margipose.models import create_model
+from margipose.utils import seed_all, init_algorithms
 
 
-def parse_args():
+def parse_args(argv):
     """Parse command-line arguments."""
 
     parser = argparse.ArgumentParser(description='3D pose estimation model exporter')
@@ -22,13 +24,13 @@ def parse_args():
     parser.add_argument('-f', '--format', type=str, default='pytorch', choices=['pytorch', 'onnx'],
                         help='format of output model')
 
-    args = parser.parse_args()
+    args = parser.parse_args(argv[1:])
 
     return args
 
 
-def main():
-    args = parse_args()
+def main(argv=sys.argv):
+    args = parse_args(argv)
     seed_all(12345)
     init_algorithms(deterministic=True)
 

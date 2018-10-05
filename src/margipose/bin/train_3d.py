@@ -2,6 +2,7 @@
 
 import datetime
 import json
+import sys
 from os import environ, path, makedirs
 
 import sacred
@@ -373,8 +374,8 @@ def sacred_main(_run: Run, seed, showoff, out_dir, batch_size, epochs, tags, mod
     return _run.result
 
 
-def main():
-    ex.run_commandline()
+def main(argv=sys.argv):
+    ex.run_commandline(argv)
 
 
 if __name__ == '__main__':

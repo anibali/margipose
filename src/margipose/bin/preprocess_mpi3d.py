@@ -6,13 +6,15 @@ The input files may be obtained from http://gvv.mpi-inf.mpg.de/3dhp-dataset/.
 """
 
 import argparse
+import sys
 from os import path, listdir
+
 from margipose.data.mpi_inf_3dhp.preprocess import preprocess_training_data, \
     preprocess_validation_data, preprocess_training_masks, preprocess_validation_masks, \
     preprocess_test_data
 
 
-def parse_args():
+def parse_args(argv):
     """Parse command-line arguments."""
 
     parser = argparse.ArgumentParser(description='Preprocess data from the MPI-INF-3DHP dataset')
@@ -24,7 +26,7 @@ def parse_args():
                         default='/data/fast/mpi_inf_3dhp',
                         help='directory to write preprocessed data to')
 
-    args = parser.parse_args()
+    args = parser.parse_args(argv[1:])
 
     return args
 
@@ -35,8 +37,8 @@ def assert_listing_contains(dir, expected):
         assert child in listing, '{} does not exist'.format(path.join(dir, child))
 
 
-def main():
-    args = parse_args()
+def main(argv=sys.argv):
+    args = parse_args(argv)
 
     if args.input_dir:
         assert_listing_contains(args.input_dir, ['S1', 'S2', 'S3', 'S4', 'S5', 'S6', 'S7', 'S8'])

@@ -11,9 +11,7 @@ setup(
     include_package_data=True,
     entry_points={
         'console_scripts': [
-            'margipose-train = margipose.bin.train_3d:main',
-            'margipose-eval = margipose.bin.eval_3d:main',
-            'margipose-gui = margipose.bin.run_gui:main',
+            'margipose = margipose.bin.__init__:main',
         ],
     }
 )

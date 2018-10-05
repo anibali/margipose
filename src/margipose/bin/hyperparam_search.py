@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import json
+import sys
 from os import path, environ
 
 import numpy as np
@@ -153,8 +154,8 @@ def sacred_main(_run: Run, seed, showoff, batch_size, model_desc, deterministic,
     set_progress(1)
 
 
-def main():
-    ex.run_commandline()
+def main(argv=sys.argv):
+    ex.run_commandline(argv)
 
 
 if __name__ == '__main__':

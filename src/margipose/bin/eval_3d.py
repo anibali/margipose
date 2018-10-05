@@ -5,6 +5,7 @@
 
 import argparse
 import json
+import sys
 
 import torch
 from pose3d_utils.coords import ensure_homogeneous
@@ -24,10 +25,11 @@ CPU = torch.device('cpu')
 GPU = torch.device('cuda')
 
 
-def parse_args():
+def parse_args(argv):
     """Parse command-line arguments."""
 
-    parser = argparse.ArgumentParser(description='3D human pose model evaluator')
+    parser = argparse.ArgumentParser(prog='margipose-eval',
+                                     description='3D human pose model evaluator')
     parser.add_argument('--model', type=str, metavar='FILE', required=True,
                         help='path to model file')
     parser.add_argument('--dataset', type=str, metavar='DS', default='mpi3d-test',
@@ -35,7 +37,7 @@ def parse_args():
     parser.add_argument('--multicrop', action='store_true',
                         help='enable the use of multiple crops')
 
-    args = parser.parse_args()
+    args = parser.parse_args(argv[1:])
 
     return args
 
@@ -94,8 +96,8 @@ def run_evaluation_3d(model, loader, included_joints, known_depth=False, print_p
     return aggregated_metrics
 
 
-def main():
-    args = parse_args()
+def main(argv=sys.argv):
+    args = parse_args(argv)
     seed_all(12345)
     init_algorithms(deterministic=True)
     torch.set_grad_enabled(False)
