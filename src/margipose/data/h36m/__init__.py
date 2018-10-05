@@ -352,28 +352,3 @@ class H36MDataset(PoseDataset):
 
             return self._build_sample(index, orig_camera, orig_image, orig_skel, transform_opts,
                                       extrinsics)
-
-
-# Simple test code
-if __name__ == '__main__':
-    from margipose.utils import draw_skeleton
-    import matplotlib.pyplot as plt
-
-    data_specs = DataSpecs(
-        ImageSpecs(224, mean=ImageSpecs.IMAGENET_MEAN, stddev=ImageSpecs.IMAGENET_STDDEV),
-        JointsSpecs(CanonicalSkeletonDesc, n_dims=2),
-    )
-    dataset = H36MDataset('/datasets/h36m', data_specs=data_specs, subset='trainval')
-    sample = dataset[10]
-
-    img = dataset.input_to_pil_image(sample['input'])
-
-    trans_opts = sample['transform_opts']
-    camera = sample['camera_intrinsic']
-
-    denorm_skel = dataset.denormalise_with_skeleton_height(sample['target'], camera, trans_opts)
-
-    draw_skeleton(img, denorm_skel, dataset.skeleton_desc, camera)
-
-    plt.imshow(img)
-    plt.show()

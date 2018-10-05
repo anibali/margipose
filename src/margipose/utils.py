@@ -7,7 +7,7 @@ import numpy as np
 import random
 from time import perf_counter
 from contextlib import contextmanager
-from subprocess import check_output
+
 
 def seed_all(seed):
     """Seed all random number generators."""
@@ -216,77 +216,6 @@ def draw_skeleton_2d(img, skel2d, skel_desc, mask=None, width=1):
         )
 
 
-def draw_skeleton(img, skel, skel_desc, intrinsics, mask=None):
-    """Project the pose into 2D and draw it over the image."""
-    skel2d = intrinsics.project_cartesian(skel)
-    draw_skeleton_2d(img, skel2d, skel_desc, mask)
-
-
-def draw_canonical_skeleton(img, joints3d, intrinsics):
-    from margipose.data.skeleton import CanonicalSkeletonDesc
-    draw_skeleton(img, joints3d, CanonicalSkeletonDesc, intrinsics)
-
-
-def draw_wireframe_2d(img, vertices, edges, color=(255, 255, 255)):
-    assert vertices.size(-1) == 2, 'coordinates must be 2D'
-    draw = ImageDraw.Draw(img)
-    for i, j in edges:
-        draw.line([*list(vertices[i]), *list(vertices[j])], color, width=1)
-
-
-def draw_wireframe(img, intrinsics, vertices, edges, color=(255, 255, 255)):
-    vertices_2d = intrinsics.project_cartesian(vertices)
-    draw_wireframe_2d(img, vertices_2d, edges, color)
-
-
-def unit_quad():
-    vertices = [
-        [-1, -1, 0, 1],  # 0
-        [-1, 1, 0, 1],   # 1
-        [1, -1, 0, 1],   # 2
-        [1, 1, 0, 1],    # 3
-    ]
-    edges = [(0, 1), (1, 3), (3, 2), (2, 0)]
-    return torch.DoubleTensor(vertices), edges
-
-
-def draw_quad(img, intrinsics, centre, width, height):
-    """Draws a camera-facing quad."""
-    quad_verts, quad_edges = unit_quad()
-    quad_verts[:, 0] *= width / 2
-    quad_verts[:, 1] *= height / 2
-    quad_verts[:, :3] += centre
-    draw_wireframe(img, intrinsics, quad_verts, quad_edges, color=(255, 255, 255))
-
-
-def unit_cube():
-    vertices = [
-        [-1, -1, -1, 1],  # 0
-        [-1, -1, 1, 1],   # 1
-        [-1, 1, -1, 1],   # 2
-        [-1, 1, 1, 1],    # 3
-        [1, -1, -1, 1],   # 4
-        [1, -1, 1, 1],    # 5
-        [1, 1, -1, 1],    # 6
-        [1, 1, 1, 1],     # 7
-    ]
-    edges = [
-        (0, 1), (0, 2), (0, 4), (1, 3), (1, 5), (2, 3),
-        (2, 6), (3, 7), (4, 5), (4, 6), (5, 7), (6, 7),
-    ]
-    return torch.DoubleTensor(vertices), edges
-
-
-def draw_cube(img, intrinsics, centre, width, height, depth):
-    """Draws a camera-facing cube."""
-    cube_verts, cube_edges = unit_cube()
-    cube_verts[:, 0] *= width / 2
-    cube_verts[:, 1] *= height / 2
-    cube_verts[:, 2] *= depth / 2
-    cube_verts[:, :3] += centre
-    draw_wireframe(img, intrinsics, cube_verts, cube_edges, color=(128, 128, 128))
-
-
 @contextmanager
 def timer(meter, n=1):
     start_time = perf_counter()
@@ -301,11 +230,3 @@ def generator_timer(iterable, meter):
         with timer(meter):
             vals = next(iterator)
         yield vals
-
-
-def gpu_memory_usage():
-    torch.cuda.empty_cache()
-    result = check_output([
-        'nvidia-smi', '--query-gpu=memory.used', '--format=csv,nounits,noheader'
-    ], encoding='utf-8')
-    return sum(map(int, result.strip().split('\n'))) * 1024**2
