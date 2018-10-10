@@ -130,6 +130,9 @@ class MpiInf3dDataset(PoseDataset):
 
         super().__init__(data_specs)
 
+        if not path.isdir(data_dir):
+            raise NotADirectoryError(data_dir)
+
         metadata_files = sorted(iglob(path.join(data_dir, 'S*', 'Seq*', 'metadata.h5')))
         frame_refs = []
 

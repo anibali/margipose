@@ -116,6 +116,9 @@ class H36MDataset(PoseDataset):
 
         super().__init__(data_specs)
 
+        if not path.isdir(data_dir):
+            raise NotADirectoryError(data_dir)
+
         self.subset = subset
         self.use_aug = use_aug
         self.data_dir = data_dir
