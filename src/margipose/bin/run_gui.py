@@ -34,7 +34,8 @@ def parse_args(argv):
     """Parse command-line arguments."""
 
     parser = argparse.ArgumentParser(prog='margipose-gui',
-                                     description='3D human pose browser GUI')
+                                     description='3D human pose browser GUI',
+                                     formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('--model', type=str, metavar='FILE',
                         help='path to model file')
     parser.add_argument('--dataset', type=str, metavar='STR', default='mpi3d-test',

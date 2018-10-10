@@ -6,7 +6,8 @@ import torch
 
 def create_common_arg_parser():
     """Create an argument parser for the root CLI command shared by subcommands."""
-    parser = argparse.ArgumentParser(prog='margipose')
+    parser = argparse.ArgumentParser(prog='margipose',
+                                     formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('--device', help='primary computation device, eg "cpu" or "cuda:0"',
                         default='cuda:0')
     return parser
