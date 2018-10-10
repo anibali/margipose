@@ -1,7 +1,12 @@
 #!/usr/bin/env python3
 
+"""Search for good training hyperparameters.
+
+This code runs the LR range test proposed in "Cyclical Learning Rates for Training Neural Networks"
+by Leslie N. Smith.
+"""
+
 import json
-import sys
 from os import path, environ
 
 import numpy as np
@@ -15,6 +20,7 @@ from tele.meter import ValueMeter
 from torch.optim import SGD
 from tqdm import tqdm
 
+from margipose.cli import Subcommand
 from margipose.dsntnn import average_loss
 from margipose.models import create_model
 from margipose.models.margipose_model import Default_MargiPose_Desc
@@ -24,7 +30,7 @@ from margipose.utils import seed_all, init_algorithms
 sacred.SETTINGS['DISCOVER_SOURCES'] = 'dir'
 ex = sacred.Experiment(base_dir=path.realpath(path.join(__file__, '..', '..')))
 
-GPU = torch.device('cuda')
+global_opts = {}
 
 
 def forward_loss(model, out_var, target_var, mask_var, valid_depth):
@@ -67,7 +73,7 @@ def sacred_main(_run: Run, seed, showoff, batch_size, model_desc, deterministic,
     seed_all(seed)
     init_algorithms(deterministic=deterministic)
 
-    model = create_model(model_desc).to(GPU)
+    model = create_model(model_desc).to(global_opts['device'])
     data_loader = create_train_dataloader(train_datasets, model.data_specs, batch_size,
                                           examples_per_epoch=(max_iters * batch_size))
     data_iter = iter(data_loader)
@@ -77,9 +83,9 @@ def sacred_main(_run: Run, seed, showoff, batch_size, model_desc, deterministic,
     def do_training_iteration(optimiser):
         batch = next(data_iter)
 
-        in_var = batch['input'].to(GPU, torch.float32)
-        target_var = batch['target'].to(GPU, torch.float32)
-        mask_var = batch['joint_mask'].to(GPU, torch.float32)
+        in_var = batch['input'].to(global_opts['device'], torch.float32)
+        target_var = batch['target'].to(global_opts['device'], torch.float32)
+        mask_var = batch['joint_mask'].to(global_opts['device'], torch.float32)
 
         # Calculate predictions and loss
         out_var = model(in_var)
@@ -154,9 +160,13 @@ def sacred_main(_run: Run, seed, showoff, batch_size, model_desc, deterministic,
     set_progress(1)
 
 
-def main(argv=sys.argv):
+def main(argv, common_opts):
+    global_opts.update(common_opts)
     ex.run_commandline(argv)
 
 
+Hyperparams_Subcommand = Subcommand(name='hyperparams', func=main,
+                                    help='search for good training hyperparameters')
+
 if __name__ == '__main__':
-    main()
+    Hyperparams_Subcommand.run()

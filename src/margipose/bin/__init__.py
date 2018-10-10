@@ -1,28 +1,35 @@
 #!/usr/bin/env python3
 
+"""The main entrypoint for the `margipose` command."""
+
 import sys
-import argparse
 
-from margipose.bin import train_3d, eval_3d, run_gui
+from margipose.cli import create_common_arg_parser
+from .eval_3d import Eval_Subcommand
+from .run_gui import GUI_Subcommand
+from .train_3d import Train_Subcommand
+from .hyperparam_search import Hyperparams_Subcommand
 
 
-Subcommands = {
-    'train': train_3d,
-    'eval': eval_3d,
-    'gui': run_gui,
-}
+_Subcommand_List = [
+    GUI_Subcommand,
+    Eval_Subcommand,
+    Train_Subcommand,
+    Hyperparams_Subcommand,
+]
+Subcommands = {subcmd.name: subcmd for subcmd in _Subcommand_List}
 
 
 def main(argv=sys.argv):
-    parser = argparse.ArgumentParser(prog='margipose')
-    subparsers = parser.add_subparsers(dest='subparser_name')
+    parser = create_common_arg_parser()
+    subparsers = parser.add_subparsers(dest='subparser_name', title='subcommands')
 
-    for subcmd_name, subcmd_module in Subcommands.items():
-        subparsers.add_parser(subcmd_name, add_help=False)
+    for subcmd in Subcommands.values():
+        subparsers.add_parser(subcmd.name, add_help=False, help=subcmd.help)
 
     args, subargs = parser.parse_known_args(argv[1:])
-    if 'subparser_name' in args:
-        Subcommands[args.subparser_name].main([argv[0]] + subargs)
+    if args.subparser_name is not None:
+        Subcommands[args.subparser_name].run([argv[0]] + subargs, args)
     else:
         parser.print_usage()
 

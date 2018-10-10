@@ -2,17 +2,17 @@
 
 import datetime
 import json
-import sys
 from os import environ, path, makedirs
 
 import sacred
 import tele
-import torch.cuda
+import torch
 from pose3d_utils.coords import ensure_homogeneous
 from sacred.host_info import get_host_info
 from sacred.run import Run
 from tele.meter import ValueMeter, MeanValueMeter
 
+from margipose.cli import Subcommand
 from margipose.dsntnn import average_loss
 from margipose.hyperparam_scheduler import make_1cycle
 from margipose.models import create_model
@@ -25,7 +25,8 @@ sacred.SETTINGS['DISCOVER_SOURCES'] = 'dir'
 ex = sacred.Experiment(base_dir=path.realpath(path.join(__file__, '..', '..')))
 
 CPU = torch.device('cpu')
-GPU = torch.device('cuda')
+
+global_opts = {}
 
 
 class Reporter:
@@ -151,9 +152,9 @@ def do_training_pass(epoch, model, tel, loader, scheduler, on_progress):
             scheduler.batch_step()
 
         with timer(tel['data_transfer_time']):
-            in_var = batch['input'].to(GPU, torch.float32)
-            target_var = batch['target'].to(GPU, torch.float32)
-            mask_var = batch['joint_mask'].to(GPU, torch.float32)
+            in_var = batch['input'].to(global_opts['device'], torch.float32)
+            target_var = batch['target'].to(global_opts['device'], torch.float32)
+            mask_var = batch['joint_mask'].to(global_opts['device'], torch.float32)
 
         # Calculate predictions and loss
         with timer(tel['forward_time']):
@@ -197,9 +198,9 @@ def do_validation_pass(epoch, model, tel, loader):
     model.eval()
     with torch.no_grad():
         for batch in progress_iter(loader, 'Validation'):
-            in_var = batch['input'].to(GPU, torch.float32)
-            target_var = batch['target'].to(GPU, torch.float32)
-            mask_var = batch['joint_mask'].to(GPU, torch.float32)
+            in_var = batch['input'].to(global_opts['device'], torch.float32)
+            target_var = batch['target'].to(global_opts['device'], torch.float32)
+            mask_var = batch['joint_mask'].to(global_opts['device'], torch.float32)
 
             # Calculate predictions and loss
             out_var = model(in_var)
@@ -277,7 +278,7 @@ def sacred_main(_run: Run, seed, showoff, out_dir, batch_size, epochs, tags, mod
         model_desc = details['model_desc']
         model = create_model(model_desc)
         model.load_state_dict(details['state_dict'])
-    model.to(GPU)
+    model.to(global_opts['device'])
 
     print(json.dumps(model_desc, sort_keys=True, indent=2))
 
@@ -374,9 +375,12 @@ def sacred_main(_run: Run, seed, showoff, out_dir, batch_size, epochs, tags, mod
     return _run.result
 
 
-def main(argv=sys.argv):
+def main(argv, common_opts):
+    global_opts.update(common_opts)
     ex.run_commandline(argv)
 
 
+Train_Subcommand = Subcommand(name='train', func=main, help='train a model')
+
 if __name__ == '__main__':
-    main()
+    Train_Subcommand.run()

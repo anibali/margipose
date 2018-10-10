@@ -5,13 +5,13 @@
 
 import argparse
 import json
-import sys
 
 import torch
 from pose3d_utils.coords import ensure_homogeneous
 from tele.meter import MeanValueMeter, MedianValueMeter
 from tqdm import tqdm
 
+from margipose.cli import Subcommand
 from margipose.data import make_dataloader, make_unbatched_dataloader
 from margipose.data.get_dataset import get_dataset
 from margipose.data.skeleton import CanonicalSkeletonDesc, VNect_Common_Skeleton
@@ -21,8 +21,8 @@ from margipose.models import load_model
 from margipose.utils import seed_all, init_algorithms
 from margipose.utils import timer
 
+
 CPU = torch.device('cpu')
-GPU = torch.device('cuda')
 
 
 def parse_args(argv):
@@ -42,7 +42,8 @@ def parse_args(argv):
     return args
 
 
-def run_evaluation_3d(model, loader, included_joints, known_depth=False, print_progress=False):
+def run_evaluation_3d(model, device, loader, included_joints, known_depth=False,
+                      print_progress=False):
     loss_meter = MeanValueMeter()
     time_meter = MedianValueMeter()
 
@@ -55,8 +56,8 @@ def run_evaluation_3d(model, loader, included_joints, known_depth=False, print_p
         iterable = tqdm(loader, leave=True, ascii=True)
 
     for batch in iterable:
-        in_var = batch['input'].to(GPU, torch.float32)
-        target_var = batch['target'].to(GPU, torch.float32)
+        in_var = batch['input'].to(device, torch.float32)
+        target_var = batch['target'].to(device, torch.float32)
 
         # Calculate predictions and loss
         with timer(time_meter):
@@ -96,13 +97,15 @@ def run_evaluation_3d(model, loader, included_joints, known_depth=False, print_p
     return aggregated_metrics
 
 
-def main(argv=sys.argv):
+def main(argv, common_opts):
     args = parse_args(argv)
     seed_all(12345)
     init_algorithms(deterministic=True)
     torch.set_grad_enabled(False)
 
-    model = load_model(args.model).to(GPU).eval()
+    device = common_opts['device']
+
+    model = load_model(args.model).to(device).eval()
     dataset = get_dataset(args.dataset, model.data_specs, use_aug=False)
 
     if args.multicrop:
@@ -123,7 +126,8 @@ def main(argv=sys.argv):
     print('Use ground truth root joint depth? {}'.format(known_depth))
     print('Number of joints in evaluation: {}'.format(len(included_joints)))
 
-    metrics = run_evaluation_3d(model, loader, included_joints, known_depth=known_depth, print_progress=True)
+    metrics = run_evaluation_3d(model, device, loader, included_joints, known_depth=known_depth,
+                                print_progress=True)
 
     print(json.dumps(metrics, sort_keys=True, indent=2))
     print(','.join([
@@ -138,5 +142,7 @@ def main(argv=sys.argv):
     ]))
 
 
+Eval_Subcommand = Subcommand(name='eval', func=main, help='evaluate the accuracy of predictions')
+
 if __name__ == '__main__':
-    main()
+    Eval_Subcommand.run()

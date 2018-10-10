@@ -87,7 +87,7 @@ Train without pixel-wise loss term:
 Evaluate a model's test set performance using the second GPU:
 
 ```bash
-NVIDIA_VISIBLE_DEVICES=1 ./run.sh margipose eval --model margipose-mpi3d.pth --dataset mpi3d-test
+./run.sh margipose --device=cuda:1 eval --model margipose-mpi3d.pth --dataset mpi3d-test
 ```
 
 Explore qualitative results with a GUI:

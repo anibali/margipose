@@ -16,7 +16,6 @@ from functools import lru_cache
 import os
 import numpy as np
 from pose3d_utils.coords import ensure_homogeneous, ensure_cartesian
-import sys
 
 from margipose.data.get_dataset import get_dataset
 from margipose.data.skeleton import absolute_to_root_relative, \
@@ -25,9 +24,10 @@ from margipose.utils import plot_skeleton_on_axes3d, plot_skeleton_on_axes, seed
 from margipose.models import load_model
 from margipose.eval import mpjpe, pck
 from margipose.data_specs import DataSpecs, ImageSpecs, JointsSpecs
+from margipose.cli import Subcommand
+
 
 CPU = torch.device('cpu')
-GPU = torch.device('cuda')
 
 
 def parse_args(argv):
@@ -69,11 +69,11 @@ def load_example(dataset, example_index):
 
 
 @lru_cache(maxsize=32)
-def load_and_process_example(dataset, example_index, model=None):
+def load_and_process_example(dataset, example_index, device, model):
     example = load_example(dataset, example_index)
     if model is None:
         return example
-    in_var = example['input'].unsqueeze(0).to(GPU, torch.float32)
+    in_var = example['input'].unsqueeze(0).to(device, torch.float32)
     out_var = model(in_var)
     pred_skel_norm = ensure_homogeneous(out_var.squeeze(0).to(CPU, torch.float64), d=3)
     pred_skel_denorm = dataset.denormalise_with_skeleton_height(
@@ -101,10 +101,11 @@ def root_relative(skel):
 
 
 class MainGUIApp(tk.Tk):
-    def __init__(self, dataset, model):
+    def __init__(self, dataset, device, model):
         super().__init__()
 
         self.dataset = dataset
+        self.device = device
         self.model = model
 
         self.wm_title('3D pose estimation')
@@ -363,19 +364,21 @@ class MainGUIApp(tk.Tk):
 
     def on_change_example(self):
         self.current_example = load_and_process_example(
-            self.dataset, self.current_example_index, self.model)
+            self.dataset, self.current_example_index, self.device, self.model)
 
         self.update_current_tab()
 
 
-def main(argv=sys.argv):
+def main(argv, common_opts):
     args = parse_args(argv)
     seed_all(12345)
     init_algorithms(deterministic=True)
     torch.set_grad_enabled(False)
 
+    device = common_opts['device']
+
     if args.model:
-        model = load_model(args.model).to(GPU).eval()
+        model = load_model(args.model).to(device).eval()
         data_specs = model.data_specs
     else:
         model = None
@@ -386,9 +389,11 @@ def main(argv=sys.argv):
 
     dataset = get_dataset(args.dataset, data_specs, use_aug=False)
 
-    app = MainGUIApp(dataset, model)
+    app = MainGUIApp(dataset, device, model)
     app.mainloop()
 
 
+GUI_Subcommand = Subcommand(name='gui', func=main, help='browse examples and predictions')
+
 if __name__ == '__main__':
-    main()
+    GUI_Subcommand.run()
