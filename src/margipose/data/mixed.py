@@ -34,7 +34,8 @@ class MixedPoseDataset(PoseDataset):
     def __init__(self, datasets, balanced_sampling=True):
         # Enforce same data specs for all datasets
         data_specs = datasets[0].data_specs
-        for other_data_specs in datasets[1:]:
+        for dataset in datasets[1:]:
+            other_data_specs = dataset.data_specs
             assert other_data_specs == data_specs, 'combined datasets must have same data specs'
 
         super().__init__(data_specs)
