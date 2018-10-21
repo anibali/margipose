@@ -1,0 +1,52 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: train-chatterbox-mpi3d
+spec:
+  # Don't restart the pod once it finishes
+  restartPolicy: Never
+  # PyTorch's multithreading requires hostIPC to be set to true
+  hostIPC: true
+  containers:
+  - name: train-chatterbox-mpi3d
+    image: registry.dl.cs.latrobe.edu.au/aiden/margipose
+    # Always pull the latest version of your Docker image
+    imagePullPolicy: Always
+    # Request 1 GPU to be allocated for your task
+    resources:
+      limits:
+        nvidia.com/gpu: 1
+    # The command which starts your program in the container
+    args: ["margipose", "train", "with", "chatterbox_model", "1cycle", "mpi3d", "epochs=200"]
+    # Attach terminal
+    tty: true
+    # Mount the datasets and output directory inside the container
+    volumeMounts:
+    - mountPath: /datasets/mpi3d
+      name: mpi3d
+      readOnly: true
+    - mountPath: /datasets/mpii
+      name: mpii
+      readOnly: true
+    - mountPath: /app/out
+      name: output
+    - mountPath: /home/user/.torch/models
+      name: pretrained-models
+  volumes:
+  # Specify where to find volume directories on the host
+  - name: mpi3d
+    hostPath:
+      path: /nfs/datasets/public/MPI-INF-3DHP
+      type: Directory
+  - name: mpii
+    hostPath:
+      path: /nfs/datasets/public/MPII_Human_Pose
+      type: Directory
+  - name: output
+    hostPath:
+      path: /nfs/users/aiden/margipose-out
+      type: DirectoryOrCreate
+  - name: pretrained-models
+    hostPath:
+      path: /nfs/models/pytorch
+      type: DirectoryOrCreate

@@ -17,6 +17,7 @@ from margipose.dsntnn import average_loss
 from margipose.hyperparam_scheduler import make_1cycle
 from margipose.models import create_model
 from margipose.models.margipose_model import Default_MargiPose_Desc
+from margipose.models.chatterbox_model import Default_Chatterbox_Desc
 from margipose.train_helpers import visualise_predictions, progress_iter, create_showoff_notebook, \
     learning_schedule, create_train_dataloader, create_val_dataloader
 from margipose.utils import seed_all, init_algorithms, timer, generator_timer
@@ -224,6 +225,7 @@ def do_validation_pass(epoch, model, tel, loader):
 
 # Predefined model configuration sets
 ex.add_named_config('margipose_model', model_desc=Default_MargiPose_Desc)
+ex.add_named_config('chatterbox_model', model_desc=Default_Chatterbox_Desc)
 
 # Predefined optimiser configuration sets
 ex.add_named_config('rmsprop', optim_algorithm='rmsprop', epochs=150, lr=2.5e-3,

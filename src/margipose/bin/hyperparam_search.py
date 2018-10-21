@@ -24,6 +24,7 @@ from margipose.cli import Subcommand
 from margipose.dsntnn import average_loss
 from margipose.models import create_model
 from margipose.models.margipose_model import Default_MargiPose_Desc
+from margipose.models.chatterbox_model import Default_Chatterbox_Desc
 from margipose.train_helpers import create_train_dataloader, create_showoff_notebook
 from margipose.utils import seed_all, init_algorithms
 
@@ -52,6 +53,7 @@ def forward_loss(model, out_var, target_var, mask_var, valid_depth):
 
 
 ex.add_named_config('margipose_model', model_desc=Default_MargiPose_Desc)
+ex.add_named_config('chatterbox_model', model_desc=Default_Chatterbox_Desc)
 
 ex.add_config(
     showoff=not not environ.get('SHOWOFF_URL'),

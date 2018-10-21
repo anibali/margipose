@@ -1,6 +1,7 @@
 from semantic_version import Version
 
 from .margipose_model import MargiPoseModelFactory
+from .chatterbox_model import ChatterboxModelFactory
 
 
 import torch
@@ -8,6 +9,7 @@ import torch
 
 MODEL_FACTORIES = [
     MargiPoseModelFactory(),
+    ChatterboxModelFactory(),
 ]
 
 
