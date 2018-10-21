@@ -1,14 +1,14 @@
 apiVersion: v1
 kind: Pod
 metadata:
-  name: train-margipose-h36m
+  name: train-margipose-mpi3d
 spec:
   # Don't restart the pod once it finishes
   restartPolicy: Never
   # PyTorch's multithreading requires hostIPC to be set to true
   hostIPC: true
   containers:
-  - name: train-margipose-h36m
+  - name: train-margipose-mpi3d
     image: registry.dl.cs.latrobe.edu.au/aiden/margipose
     # Always pull the latest version of your Docker image
     imagePullPolicy: Always
@@ -17,13 +17,13 @@ spec:
       limits:
         nvidia.com/gpu: 1
     # The command which starts your program in the container
-    args: ["margipose", "train", "with", "margipose_model", "1cycle", "h36m", "epochs=200"]
+    args: ["margipose", "train", "with", "margipose_model", "1cycle", "mpi3d", "epochs=200"]
     # Attach terminal
     tty: true
     # Mount the datasets and output directory inside the container
     volumeMounts:
-    - mountPath: /datasets/h36m
-      name: h36m
+    - mountPath: /datasets/mpi3d
+      name: mpi3d
       readOnly: true
     - mountPath: /datasets/mpii
       name: mpii
@@ -34,9 +34,9 @@ spec:
       name: pretrained-models
   volumes:
   # Specify where to find volume directories on the host
-  - name: h36m
+  - name: mpi3d
     hostPath:
-      path: /nfs/datasets/public/Human3.6M/processed
+      path: /nfs/datasets/public/MPI-INF-3DHP
       type: Directory
   - name: mpii
     hostPath:
