@@ -63,7 +63,7 @@ RUN pip install -r requirements.txt
 # Replace Pillow with the faster Pillow-SIMD (optional)
 RUN pip uninstall -y pillow \
  && sudo apt-get update && sudo apt-get install -y gcc \
- && CC="cc -mavx2" pip install pillow-simd==5.1.1.post0 \
+ && pip install pillow-simd==5.1.1.post0 \
  && sudo apt-get remove -y gcc \
  && sudo apt-get autoremove -y \
  && sudo rm -rf /var/lib/apt/lists/*

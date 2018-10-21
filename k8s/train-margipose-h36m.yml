@@ -30,6 +30,8 @@ spec:
       readOnly: true
     - mountPath: /app/out
       name: output
+    - mountPath: /home/user/.torch/models
+      name: pretrained-models
   volumes:
   # Specify where to find volume directories on the host
   - name: h36m
@@ -43,4 +45,8 @@ spec:
   - name: output
     hostPath:
       path: /nfs/users/aiden/margipose-out
+      type: DirectoryOrCreate
+  - name: pretrained-models
+    hostPath:
+      path: /nfs/models/pytorch
       type: DirectoryOrCreate
