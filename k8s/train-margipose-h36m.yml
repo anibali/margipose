@@ -1,0 +1,46 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: train-margipose-h36m
+spec:
+  # Don't restart the pod once it finishes
+  restartPolicy: Never
+  # PyTorch's multithreading requires hostIPC to be set to true
+  hostIPC: true
+  containers:
+  - name: train-margipose-h36m
+    image: registry.dl.cs.latrobe.edu.au/aiden/margipose
+    # Always pull the latest version of your Docker image
+    imagePullPolicy: Always
+    # Request 1 GPU to be allocated for your task
+    resources:
+      limits:
+        nvidia.com/gpu: 1
+    # The command which starts your program in the container
+    args: ["margipose", "train", "with", "margipose_model", "1cycle", "h36m"]
+    # Attach terminal
+    tty: true
+    # Mount the datasets and output directory inside the container
+    volumeMounts:
+    - mountPath: /datasets/h36m
+      name: h36m
+      readOnly: true
+    - mountPath: /datasets/mpii
+      name: mpii
+      readOnly: true
+    - mountPath: /app/out
+      name: output
+  volumes:
+  # Specify where to find volume directories on the host
+  - name: h36m
+    hostPath:
+      path: /nfs/datasets/public/Human3.6M/processed
+      type: Directory
+  - name: mpii
+    hostPath:
+      path: /nfs/datasets/public/MPII_Human_Pose
+      type: Directory
+  - name: output
+    hostPath:
+      path: /nfs/users/aiden/margipose-out
+      type: DirectoryOrCreate
