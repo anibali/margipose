@@ -1,7 +1,7 @@
 import torch
 from torch import nn
 from torch.nn.functional import relu, max_pool2d
-from torchvision.models.resnet import BasicBlock
+from torchvision.models.resnet import BasicBlock, resnet34
 
 from margipose.data.skeleton import CanonicalSkeletonDesc
 from margipose.data_specs import DataSpecs, ImageSpecs, JointsSpecs
@@ -12,7 +12,7 @@ from margipose.nn_helpers import init_parameters
 
 Default_Chatterbox_Desc = {
     'type': 'chatterbox',
-    'version': '1.1.0',
+    'version': '1.3.0',
     'settings': {
         'pixelwise_loss': 'jsd',
     },
@@ -33,41 +33,31 @@ def _make_block_group(in_planes, out_planes, n_blocks, stride=1):
     return nn.Sequential(*layers)
 
 
-class _InCnn(nn.Module):
-    def __init__(self):
+class ResNetFeatureExtractor(nn.Module):
+    def __init__(self, resnet):
         super().__init__()
 
-        self.conv1 = nn.Conv2d(3, 64, kernel_size=7, stride=2, padding=3,
-                               bias=False)
-        self.bn1 = nn.BatchNorm2d(64)
-        self.layer1 = _make_block_group(64, 64, 3)
-        self.layer2 = _make_block_group(64, 128, 4, stride=2)
-
-        init_parameters(self)
+        self.conv1 = resnet.conv1
+        self.bn1 = resnet.bn1
+        self.layer1 = resnet.layer1
+        self.layer2 = resnet.layer2
 
     def forward(self, *inputs):
         x = inputs[0]
-
         x = self.conv1(x)
         x = self.bn1(x)
         x = relu(x, True)
         x = max_pool2d(x, kernel_size=3, stride=2, padding=1)
-
         x = self.layer1(x)
         x = self.layer2(x)
-
         return x
 
 
 class _XYCnn(nn.Module):
-    def __init__(self, n_joints):
+    def __init__(self, resnet, n_joints):
         super().__init__()
 
-        self.layer1 = _make_block_group(128, 256, 6, stride=2)
-        self.layer2 = _make_block_group(256, 512, 3, stride=2)
-        self.hm_conv = nn.Conv2d(512, n_joints, kernel_size=1, bias=False)
-
-        layers = [self.layer1, self.layer2]
+        layers = [resnet.layer3, resnet.layer4]
         for i, layer in enumerate(layers):
             dilx = dily = 2 ** (i + 1)
             for module in layer.modules():
@@ -78,8 +68,10 @@ class _XYCnn(nn.Module):
                         kx, ky = module.kernel_size
                         module.dilation = (dilx, dily)
                         module.padding = ((dilx * (kx - 1) + 1) // 2, (dily * (ky - 1) + 1) // 2)
+        self.layer1, self.layer2 = layers
 
-        init_parameters(self)
+        self.hm_conv = nn.Conv2d(512, n_joints, kernel_size=1, bias=False)
+        init_parameters(self.hm_conv)
 
     def forward(self, *inputs):
         t = inputs[0]
@@ -103,30 +95,30 @@ class _ChatterboxCnn(nn.Module):
 
         self.down_convs = nn.Sequential(
             # 128 x 32 x 32
-            self._DownBlock(128, 256, stride=f(1, 2), padding=f(2, 1), dilation=f(2, 1)),
-            self._DownBlock(256, 256),
+            self._DownBlock(128, 256, stride=f(1, 2), dilation=f(2, 1), dilation_in=f(1, 1)),
+            self._DownBlock(256, 256, dilation=f(2, 1)),
             # 256 x 32 x 16
-            self._DownBlock(256, 512, stride=f(1, 2), padding=f(4, 1), dilation=f(4, 1)),
-            self._DownBlock(512, 512),
+            self._DownBlock(256, 512, stride=f(1, 2), dilation=f(4, 1), dilation_in=f(2, 1)),
+            self._DownBlock(512, 512, dilation=f(4, 1)),
             # 512 x 32 x 8
-            nn.Conv2d(512, 512, kernel_size=f(1, 8), bias=False),
-            nn.BatchNorm2d(512),
+            nn.Conv2d(512, 1024, kernel_size=f(1, 8), bias=False),
+            nn.BatchNorm2d(1024),
             nn.ReLU(True),
-            # 512 x 32 x 1
+            # 1024 x 32 x 1
         )
 
         self.up_convs = nn.Sequential(
-            # 512 x 32 x 1
-            nn.ConvTranspose2d(512, 512, kernel_size=f(1, 8), bias=False),
+            # 1024 x 32 x 1
+            nn.ConvTranspose2d(1024, 512, kernel_size=f(1, 8), bias=False),
             nn.BatchNorm2d(512),
             nn.ReLU(True),
             # 512 x 32 x 8
-            self._UpBlock(512, 512),
-            self._UpBlock(512, 256, stride=f(1, 2), padding=f(4, 1), dilation=f(4, 1),
+            self._UpBlock(512, 512, dilation=f(4, 1)),
+            self._UpBlock(512, 256, stride=f(1, 2), dilation=f(2, 1), dilation_in=f(4, 1),
                           output_padding=f(0, 1)),
             # 256 x 32 x 16
-            self._UpBlock(256, 256),
-            self._UpBlock(256, 128, stride=f(1, 2), padding=f(2, 1), dilation=f(2, 1),
+            self._UpBlock(256, 256, dilation=f(2, 1)),
+            self._UpBlock(256, 128, stride=f(1, 2), dilation=f(1, 1), dilation_in=f(2, 1),
                           output_padding=f(0, 1)),
             # 128 x 32 x 32
             nn.Conv2d(128, n_joints, kernel_size=1, bias=False),
@@ -136,8 +128,11 @@ class _ChatterboxCnn(nn.Module):
         init_parameters(self)
 
     class _DownBlock(nn.Module):
-        def __init__(self, in_planes, out_planes, stride=1, padding=(1, 1), dilation=(1, 1)):
+        def __init__(self, in_planes, out_planes, stride=1, dilation=(1, 1), dilation_in=None):
             super().__init__()
+
+            if dilation_in is None:
+                dilation_in = dilation
 
             if stride != 1 or in_planes != out_planes:
                 self.resample = nn.Sequential(
@@ -148,9 +143,9 @@ class _ChatterboxCnn(nn.Module):
                 self.resample = None
 
             self.conv1 = nn.Conv2d(in_planes, out_planes, 3, stride=stride,
-                                   padding=padding, dilation=dilation, bias=False)
+                                   padding=dilation_in, dilation=dilation_in, bias=False)
             self.bn1 = nn.BatchNorm2d(out_planes)
-            self.conv2 = nn.Conv2d(out_planes, out_planes, 3, padding=padding,
+            self.conv2 = nn.Conv2d(out_planes, out_planes, 3, padding=dilation,
                                    dilation=dilation, bias=False)
             self.bn2 = nn.BatchNorm2d(out_planes)
 
@@ -173,9 +168,12 @@ class _ChatterboxCnn(nn.Module):
             return out
 
     class _UpBlock(nn.Module):
-        def __init__(self, in_planes, out_planes, stride=1, padding=(0, 0), dilation=(1, 1),
+        def __init__(self, in_planes, out_planes, stride=1, dilation=(1, 1), dilation_in=None,
                      output_padding=(0, 0)):
             super().__init__()
+
+            if dilation_in is None:
+                dilation_in = dilation
 
             if stride != 1 or in_planes != out_planes:
                 self.resample = nn.Sequential(
@@ -187,10 +185,10 @@ class _ChatterboxCnn(nn.Module):
                 self.resample = None
 
             self.conv1 = nn.ConvTranspose2d(in_planes, out_planes, 3, stride=stride,
-                                            padding=padding, dilation=dilation,
+                                            padding=dilation_in, dilation=dilation_in,
                                             output_padding=output_padding, bias=False)
             self.bn1 = nn.BatchNorm2d(out_planes)
-            self.conv2 = nn.Conv2d(out_planes, out_planes, 3, padding=padding,
+            self.conv2 = nn.Conv2d(out_planes, out_planes, 3, padding=dilation,
                                    dilation=dilation, bias=False)
             self.bn2 = nn.BatchNorm2d(out_planes)
 
@@ -232,8 +230,11 @@ class ChatterboxModel(nn.Module):
         )
 
         self.pixelwise_loss = pixelwise_loss
-        self.in_cnn = _InCnn()
-        self.xy_hm_cnn = _XYCnn(skel_desc.n_joints)
+
+        resnet = resnet34(pretrained=True)
+        self.in_cnn = ResNetFeatureExtractor(resnet)
+        self.xy_hm_cnn = _XYCnn(resnet, skel_desc.n_joints)
+
         self.zy_hm_cnn = _ChatterboxCnn(skel_desc.n_joints, shrink_width=True)
         self.xz_hm_cnn = _ChatterboxCnn(skel_desc.n_joints, shrink_width=False)
 
@@ -290,7 +291,7 @@ class ChatterboxModel(nn.Module):
 
 class ChatterboxModelFactory(ModelFactory):
     def __init__(self,):
-        super().__init__('chatterbox', '^1.1.0')
+        super().__init__('chatterbox', '^1.3.0')
 
     def create(self, model_desc):
         super()
