@@ -9,7 +9,7 @@ services:
       # use.
       - /data/h36m/processed:/datasets/h36m:ro
       - /data/fast/mpi_inf_3dhp:/datasets/mpi3d:ro
-      - /data/mpii:/datasets/mpii:ro
+      - /data/mpii:/datasets/mpii:rw
       # Other volume mounts.
       - .:/app
       - ~/.torch/models:/home/user/.torch/models:rw

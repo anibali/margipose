@@ -37,16 +37,14 @@ the others.
 
 #### MPII
 
-1. Create a directory to hold the MPII data.
-2. From inside your MPII data directory, download the annotation files:
-    ```bash
-    curl -L https://raw.githubusercontent.com/umich-vl/pose-hg-train/master/data/mpii/annot.h5 > mpii_annot_all.h5
-    curl -L https://raw.githubusercontent.com/umich-vl/pose-hg-train/master/data/mpii/annot/valid.h5 > mpii_annot_valid.h5
-    ```
-3. Download [the original MPII dataset](http://human-pose.mpi-inf.mpg.de/) and move the
-   `images/` folder into your MPII data directory.
-4. Edit the volume mounts in `docker-compose.yml` so that the absolute location of
-   the MPII data is bound to `/datasets/mpii` inside the Docker container.
+1. Edit the volume mounts in `docker-compose.yml` so that the desired installation directory
+   for the MPII Human Pose dataset is bound to `/datasets/mpii` inside the Docker container.
+2. Run the following to download and install the MPII Human Pose dataset:
+   ```
+   $ ./run.sh python
+   >>> from torchdata import mpii
+   >>> mpii.install_mpii_dataset('/datasets/mpii')
+   ```
 
 ### [Optional] Configure and run Showoff
 

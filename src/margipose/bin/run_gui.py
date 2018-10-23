@@ -226,10 +226,14 @@ class MainGUIApp(tk.Tk):
             command=lambda: self.update_current_tab())
         chk_pred_visible.pack(side=tk.LEFT, fill=tk.Y, padx=2, pady=2)
         if self.model is None:
+            self.var_pred_visible.set(0)
             chk_pred_visible.configure(state='disabled')
         chk_gt_visible = tk.Checkbutton(
             toolbar, text='Show ground truth', variable=self.var_gt_visible,
             command=lambda: self.update_current_tab())
+        if hasattr(self.dataset, 'subset') and self.dataset.subset == 'test':
+            self.var_gt_visible.set(0)
+            chk_gt_visible.configure(state='disabled')
         chk_gt_visible.pack(side=tk.LEFT, fill=tk.Y, padx=2, pady=2)
 
         fig = Figure()
