@@ -108,6 +108,11 @@ def deploy(args):
         ]
     )
 
+    if args.node:
+        pod_spec.node_selector = {
+            'kubernetes.io/hostname': args.node,
+        }
+
     pod = client.V1Pod(
         api_version='v1',
         kind='Pod',
@@ -184,6 +189,8 @@ def parse_args():
                         help='tag for the Docker image')
     parser.add_argument('--rm', type=_bool, const=True, default=False, nargs='?',
                         help='remove the pod after termination')
+    parser.add_argument('--node', type=str,
+                        help='specific cluster node to target for deployment')
     parser.add_argument('command', nargs=argparse.REMAINDER)
 
     args = parser.parse_args()
