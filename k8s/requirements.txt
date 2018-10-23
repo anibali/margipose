@@ -1,0 +1,2 @@
+kubernetes==7.0.0
+docker==3.5.1
