@@ -266,6 +266,7 @@ def sacred_main(_run: Run, seed, showoff, out_dir, batch_size, epochs, tags, mod
     if out_dir:
         exp_out_dir = path.join(out_dir, experiment_id)
         makedirs(exp_out_dir, exist_ok=True)
+    print(f'Experiment ID: {experiment_id}')
 
     ####
     # Model
