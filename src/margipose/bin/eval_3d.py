@@ -5,8 +5,10 @@
 
 import argparse
 import json
+from time import perf_counter
 
 import torch
+import pandas as pd
 from pose3d_utils.coords import ensure_homogeneous
 from tele.meter import MeanValueMeter, MedianValueMeter
 from tqdm import tqdm
@@ -19,7 +21,6 @@ from margipose.dsntnn import average_loss
 from margipose.eval import prepare_for_3d_evaluation, gather_3d_metrics
 from margipose.models import load_model
 from margipose.utils import seed_all, init_algorithms
-from margipose.utils import timer
 
 
 CPU = torch.device('cpu')
@@ -44,13 +45,7 @@ def parse_args(argv):
     return args
 
 
-def run_evaluation_3d(model, device, loader, included_joints, known_depth=False,
-                      print_progress=False):
-    loss_meter = MeanValueMeter()
-    time_meter = MedianValueMeter()
-
-    metrics = []
-
+def obtain_predictions(model, device, loader, known_depth=False, print_progress=False):
     model.eval()
 
     iterable = loader
@@ -62,11 +57,10 @@ def run_evaluation_3d(model, device, loader, included_joints, known_depth=False,
         target_var = batch['target'].to(device, torch.float32)
 
         # Calculate predictions and loss
-        with timer(time_meter):
-            out_var = model(in_var)
+        start_time = perf_counter()
+        out_var = model(in_var)
+        inference_time = perf_counter() - start_time
         loss = average_loss(model.forward_3d_losses(out_var, target_var.narrow(-1, 0, 3)))
-
-        loss_meter.add(loss.sum().item())
 
         norm_preds = ensure_homogeneous(out_var.to(CPU, torch.float64), d=3)
 
@@ -84,19 +78,35 @@ def run_evaluation_3d(model, device, loader, included_joints, known_depth=False,
             actuals.append(actual_i)
         actual = torch.stack(actuals, 0).mean(0)
 
-        metrics.append(gather_3d_metrics(expected, actual, included_joints))
+        prediction = dict(
+            expected=expected,
+            actual=actual,
+            frame_ref=batch['frame_ref'][0],
+            inference_time=inference_time,
+            loss=loss.sum().item(),
+        )
 
-    aggregated_metrics = dict(
-        loss=loss_meter.value()[0],
-        time=time_meter.value()[0],
-    )
+        yield prediction
 
-    # Aggregate the mean value of each 3D evaluation metric
-    for metric_name in metrics[0].keys():
-        metric_values = [m[metric_name] for m in metrics]
-        aggregated_metrics[metric_name] = sum(metric_values) / len(metric_values)
 
-    return aggregated_metrics
+def run_evaluation_3d(model, device, loader, included_joints, known_depth=False,
+                      print_progress=False):
+    loss_meter = MeanValueMeter()
+    time_meter = MedianValueMeter()
+
+    d = dict(seq_id=[], activity_id=[], aligned_auc=[], aligned_mpjpe=[], aligned_pck=[],
+             auc=[], mpjpe=[], pck=[])
+
+    for pred in obtain_predictions(model, device, loader, known_depth, print_progress):
+        time_meter.add(pred['inference_time'])
+        loss_meter.add(pred['loss'])
+        metrics = gather_3d_metrics(pred['expected'], pred['actual'], included_joints)
+        d['seq_id'].append(f'TS{pred["frame_ref"]["subject_id"]}/Seq{pred["frame_ref"]["sequence_id"]}')
+        d['activity_id'].append(pred['frame_ref']['activity_id'])
+        for metric_name, metric_value in metrics.items():
+            d[metric_name].append(metric_value)
+
+    return pd.DataFrame(d)
 
 
 def main(argv, common_opts):
@@ -128,20 +138,17 @@ def main(argv, common_opts):
     print('Use ground truth root joint depth? {}'.format(known_depth))
     print('Number of joints in evaluation: {}'.format(len(included_joints)))
 
-    metrics = run_evaluation_3d(model, device, loader, included_joints, known_depth=known_depth,
-                                print_progress=True)
+    df = run_evaluation_3d(model, device, loader, included_joints, known_depth=known_depth,
+                           print_progress=True)
 
-    print(json.dumps(metrics, sort_keys=True, indent=2))
-    print(','.join([
-        '{:0.6f}%'.format(metrics['pck'] * 100),
-        '{:0.6f}'.format(metrics['mpjpe']),
-        '{:0.6f}%'.format(metrics['auc'] * 100),
-        '{:0.6f}'.format(1.0 / metrics['time']),
-        '',
-        '{:0.6f}%'.format(metrics['aligned_pck'] * 100),
-        '{:0.6f}'.format(metrics['aligned_mpjpe']),
-        '{:0.6f}%'.format(metrics['aligned_auc'] * 100),
-    ]))
+    print('# By sequence')
+    print(df.drop(columns=['activity_id']).groupby('seq_id').mean())
+    print()
+    print('# By activity')
+    print(df.drop(columns=['seq_id']).groupby('activity_id').mean())
+    print()
+    print('# Overall')
+    print(df.drop(columns=['activity_id', 'seq_id']).mean())
 
 
 Eval_Subcommand = Subcommand(name='eval', func=main, help='evaluate the accuracy of predictions')

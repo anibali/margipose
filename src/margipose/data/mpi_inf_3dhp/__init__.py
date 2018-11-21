@@ -18,11 +18,12 @@ from margipose.eval import prepare_for_3d_evaluation, gather_3d_metrics
 
 
 class FrameRef:
-    def __init__(self, subject_id, sequence_id, camera_id, frame_index):
+    def __init__(self, subject_id, sequence_id, camera_id, frame_index, activity_id=None):
         self.subject_id = subject_id
         self.sequence_id = sequence_id
         self.camera_id = camera_id
         self.frame_index = frame_index
+        self.activity_id = activity_id
 
     @property
     def image_file(self):
@@ -81,6 +82,7 @@ class FrameRef:
             'sequence_id': self.sequence_id,
             'camera_id': self.camera_id,
             'frame_index': self.frame_index,
+            'activity_id': self.activity_id,
         }
 
 
@@ -141,12 +143,21 @@ class MpiInf3dDataset(PoseDataset):
             subject_id = int(match.group(1))
             sequence_id = int(match.group(2))
 
+            activity_ids = None
+            mat_annot_file = path.join(path.dirname(metadata_file), 'annot_data.mat')
+            if path.isfile(mat_annot_file):
+                with h5py.File(mat_annot_file, 'r') as f:
+                    activity_ids = f['activity_annotation'].value.flatten().astype(int)
+
             with h5py.File(metadata_file, 'r') as f:
                 keys = f['interesting_frames'].keys()
                 for key in keys:
                     camera_id = int(re.match(r'camera(\d)', key).group(1))
                     for frame_index in f['interesting_frames'][key]:
-                        frame_refs.append(FrameRef(subject_id, sequence_id, camera_id, frame_index))
+                        activity_id = None
+                        if activity_ids is not None:
+                            activity_id = activity_ids[frame_index]
+                        frame_refs.append(FrameRef(subject_id, sequence_id, camera_id, frame_index, activity_id))
 
         self.data_dir = data_dir
         self.use_aug = use_aug

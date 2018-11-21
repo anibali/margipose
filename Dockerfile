@@ -52,6 +52,10 @@ RUN conda install -y -c pytorch \
 RUN conda install --no-update-deps -y -c conda-forge ffmpeg=3.2.4 graphviz=2.38.0 \
  && conda clean -ya
 
+# Install pandas
+RUN conda install -y pandas \
+ && conda clean -ya
+
 # Use tkinter as the default matplotlib backend
 RUN mkdir -p $HOME/.config/matplotlib \
  && echo "backend : TkAgg" > $HOME/.config/matplotlib/matplotlibrc
