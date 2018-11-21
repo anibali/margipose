@@ -5,13 +5,13 @@
 Examples:
 
 ```bash
-# Train MargiPose on MPI-INF-3DHP data for 200 epochs
+# Train MargiPose on MPI-INF-3DHP data for 150 epochs
 $ k8s/deploy.py --name=train-margipose-mpi3d -- \
-  margipose train with margipose_model 1cycle mpi3d epochs=200
+  margipose train with margipose_model 1cycle mpi3d epochs=150
 
-# Train MargiPose on Human3.6M data for 200 epochs
+# Train MargiPose on Human3.6M data for 150 epochs
 $ k8s/deploy.py --name=train-margipose-h36m -- \
-  margipose train with margipose_model 1cycle h36m epochs=200
+  margipose train with margipose_model 1cycle h36m epochs=150
 ```
 """
 

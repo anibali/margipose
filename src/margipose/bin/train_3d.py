@@ -230,7 +230,7 @@ ex.add_named_config('chatterbox_model', model_desc=Default_Chatterbox_Desc)
 # Predefined optimiser configuration sets
 ex.add_named_config('rmsprop', optim_algorithm='rmsprop', epochs=150, lr=2.5e-3,
                     lr_milestones=[80, 140], lr_gamma=0.1)
-ex.add_named_config('1cycle', optim_algorithm='1cycle', epochs=200, lr=1.0,
+ex.add_named_config('1cycle', optim_algorithm='1cycle', epochs=150, lr=1.0,
                     lr_milestones=None, lr_gamma=None)
 
 # Predefined dataset configuration sets
