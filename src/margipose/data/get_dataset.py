@@ -27,7 +27,7 @@ def get_dataset(dataset_name, data_specs=None, use_aug=False) -> PoseDataset:
     """
 
     # MPI-INF-3DHP
-    mpi3d_match = re.match('mpi3d-(train|val|test|test-uncorrected)', dataset_name)
+    mpi3d_match = re.fullmatch('mpi3d-(train|val|test|test-uncorrected)', dataset_name)
     if mpi3d_match:
         subset = mpi3d_match[1]
         return MpiInf3dDataset(path.join(Base_Data_Dir, 'mpi3d', subset),
