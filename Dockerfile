@@ -1,4 +1,4 @@
-FROM nvidia/cuda:9.0-base-ubuntu16.04
+FROM nvidia/cuda:10.0-base-ubuntu16.04
 
 # Install some basic utilities
 RUN apt-get update && apt-get install -y \
@@ -24,36 +24,26 @@ USER user
 ENV HOME=/home/user
 RUN chmod 777 /home/user
 
-# Install Miniconda
+# Install Miniconda and Python 3.6.5
+ENV CONDA_AUTO_UPDATE_CONDA=false
+ENV PATH=/home/user/miniconda/bin:$PATH
 RUN curl -so ~/miniconda.sh https://repo.continuum.io/miniconda/Miniconda3-4.5.4-Linux-x86_64.sh \
  && chmod +x ~/miniconda.sh \
  && ~/miniconda.sh -b -p ~/miniconda \
- && rm ~/miniconda.sh
-ENV PATH=/home/user/miniconda/bin:$PATH
-ENV CONDA_AUTO_UPDATE_CONDA=false
-
-# Create a Python 3.6 environment
-RUN /home/user/miniconda/bin/conda install conda-build \
- && /home/user/miniconda/bin/conda create -y --name py36 python=3.6.5 \
- && /home/user/miniconda/bin/conda clean -ya
-ENV CONDA_DEFAULT_ENV=py36
-ENV CONDA_PREFIX=/home/user/miniconda/envs/$CONDA_DEFAULT_ENV
-ENV PATH=$CONDA_PREFIX/bin:$PATH
+ && rm ~/miniconda.sh \
+ && conda install -y python==3.6.5 \
+ && conda clean -ya
 
 # Install PyTorch with CUDA support
 RUN conda install -y -c pytorch \
-    cuda90=1.0 \
-    magma-cuda90=2.3.0 \
-    "pytorch=0.4.1=py36_cuda9.0.176_cudnn7.1.2_1" \
+    cuda100=1.0 \
+    magma-cuda100=2.4.0 \
+    "pytorch=1.0.0=py3.6_cuda10.0.130_cudnn7.4.1_1" \
     torchvision=0.2.1 \
  && conda clean -ya
 
-# Install FFmpeg and Graphviz
-RUN conda install --no-update-deps -y -c conda-forge ffmpeg=3.2.4 graphviz=2.38.0 \
- && conda clean -ya
-
-# Install pandas
-RUN conda install -y pandas \
+# Install matplotlib, pandas, ffmpeg, and graphviz
+RUN conda install -y matplotlib=2.2.3 pandas=0.23.4 ffmpeg=3.4 graphviz=2.40.1 \
  && conda clean -ya
 
 # Use tkinter as the default matplotlib backend
@@ -67,7 +57,7 @@ RUN pip install -r requirements.txt
 # Replace Pillow with the faster Pillow-SIMD (optional)
 RUN pip uninstall -y pillow \
  && sudo apt-get update && sudo apt-get install -y gcc \
- && pip install pillow-simd==5.1.1.post0 \
+ && pip install pillow-simd==5.2.0.post0 \
  && sudo apt-get remove -y gcc \
  && sudo apt-get autoremove -y \
  && sudo rm -rf /var/lib/apt/lists/*

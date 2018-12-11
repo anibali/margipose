@@ -1,12 +1,12 @@
 graphviz==0.8
-numpy==1.14.3
-Pillow==5.1.0
+numpy==1.15.0
+Pillow==5.2.0
 tqdm==4.19.5
 scipy==1.0.0
-torch==0.4.1
+torch==1.0.0
 torchvision==0.2.1
 pretrainedmodels==0.6.0
-matplotlib==2.1.0
+matplotlib==2.2.3
 h5py==2.8.0
 importlib_resources==0.4.0
 semantic_version==2.6.0
