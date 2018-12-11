@@ -3,7 +3,7 @@
 import matplotlib
 matplotlib.use('TkAgg')
 
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2TkAgg
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
 import matplotlib.pyplot as plt
 from matplotlib.figure import Figure
 from mpl_toolkits.mplot3d import Axes3D
@@ -112,8 +112,8 @@ class MainGUIApp(tk.Tk):
         self.wm_title('3D pose estimation')
         self.geometry('1280x800')
 
-        matplotlib.backends.backend_tkagg.rcParams['savefig.format'] = 'svg'
-        matplotlib.backends.backend_tkagg.rcParams['savefig.directory'] = os.curdir
+        matplotlib.rcParams['savefig.format'] = 'svg'
+        matplotlib.rcParams['savefig.directory'] = os.curdir
 
         # Variables
         self.var_cur_example = tk.StringVar()
@@ -239,9 +239,9 @@ class MainGUIApp(tk.Tk):
         fig = Figure()
         fig.subplots_adjust(0.05, 0.10, 0.95, 0.95, 0.05, 0.05)
         canvas = FigureCanvasTkAgg(fig, tab)
-        canvas.show()
+        canvas.draw()
         canvas.get_tk_widget().pack(side=tk.BOTTOM, fill=tk.BOTH, expand=True)
-        nav_toolbar = NavigationToolbar2TkAgg(canvas, tab)
+        nav_toolbar = NavigationToolbar2Tk(canvas, tab)
         nav_toolbar.update()
         canvas._tkcanvas.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
 
@@ -311,9 +311,9 @@ class MainGUIApp(tk.Tk):
 
         fig = Figure()
         canvas = FigureCanvasTkAgg(fig, tab)
-        canvas.show()
+        canvas.draw()
         canvas.get_tk_widget().pack(side=tk.BOTTOM, fill=tk.BOTH, expand=True)
-        nav_toolbar = NavigationToolbar2TkAgg(canvas, tab)
+        nav_toolbar = NavigationToolbar2Tk(canvas, tab)
         nav_toolbar.update()
         canvas._tkcanvas.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
 
