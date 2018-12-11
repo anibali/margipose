@@ -4,7 +4,6 @@
 
 
 import argparse
-import json
 from time import perf_counter
 
 import torch
@@ -12,6 +11,7 @@ import pandas as pd
 from pose3d_utils.coords import ensure_homogeneous
 from tele.meter import MeanValueMeter, MedianValueMeter
 from tqdm import tqdm
+from tabulate import tabulate
 
 from margipose.cli import Subcommand
 from margipose.data import make_dataloader, make_unbatched_dataloader
@@ -141,14 +141,17 @@ def main(argv, common_opts):
     df = run_evaluation_3d(model, device, loader, included_joints, known_depth=known_depth,
                            print_progress=True)
 
-    print('# By sequence')
-    print(df.drop(columns=['activity_id']).groupby('seq_id').mean())
+    print('### By sequence')
     print()
-    print('# By activity')
-    print(df.drop(columns=['seq_id']).groupby('activity_id').mean())
+    print(tabulate(df.drop(columns=['activity_id']).groupby('seq_id').mean(), headers='keys', tablefmt='pipe'))
     print()
-    print('# Overall')
-    print(df.drop(columns=['activity_id', 'seq_id']).mean())
+    print('### By activity')
+    print()
+    print(tabulate(df.drop(columns=['seq_id']).groupby('activity_id').mean(), headers='keys', tablefmt='pipe'))
+    print()
+    print('### Overall')
+    print()
+    print(tabulate(df.drop(columns=['activity_id', 'seq_id']).mean().to_frame().T, headers='keys', tablefmt='pipe'))
 
 
 Eval_Subcommand = Subcommand(name='eval', func=main, help='evaluate the accuracy of predictions')
