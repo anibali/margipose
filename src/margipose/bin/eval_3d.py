@@ -78,10 +78,15 @@ def obtain_predictions(model, device, loader, known_depth=False, print_progress=
             actuals.append(actual_i)
         actual = torch.stack(actuals, 0).mean(0)
 
+        try:
+            frame_ref = batch['frame_ref'][0]
+        except KeyError:
+            frame_ref = None
+
         prediction = dict(
             expected=expected,
             actual=actual,
-            frame_ref=batch['frame_ref'][0],
+            frame_ref=frame_ref,
             inference_time=inference_time,
             loss=loss.sum().item(),
         )
@@ -101,8 +106,12 @@ def run_evaluation_3d(model, device, loader, included_joints, known_depth=False,
         time_meter.add(pred['inference_time'])
         loss_meter.add(pred['loss'])
         metrics = gather_3d_metrics(pred['expected'], pred['actual'], included_joints)
-        d['seq_id'].append(f'TS{pred["frame_ref"]["subject_id"]}/Seq{pred["frame_ref"]["sequence_id"]}')
-        d['activity_id'].append(pred['frame_ref']['activity_id'])
+        if pred['frame_ref']:
+            d['seq_id'].append(f'TS{pred["frame_ref"]["subject_id"]}/Seq{pred["frame_ref"]["sequence_id"]}')
+            d['activity_id'].append(pred['frame_ref']['activity_id'])
+        else:
+            d['seq_id'].append('-')
+            d['activity_id'].append('-')
         for metric_name, metric_value in metrics.items():
             d[metric_name].append(metric_value)
 
