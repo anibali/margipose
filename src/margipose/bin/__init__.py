@@ -6,16 +6,17 @@ import sys
 
 from margipose.cli import create_common_arg_parser
 from .eval_3d import Eval_Subcommand
+from .hyperparam_search import Hyperparams_Subcommand
+from .infer_single import Infer_Subcommand
 from .run_gui import GUI_Subcommand
 from .train_3d import Train_Subcommand
-from .hyperparam_search import Hyperparams_Subcommand
-
 
 _Subcommand_List = [
     GUI_Subcommand,
     Eval_Subcommand,
     Train_Subcommand,
     Hyperparams_Subcommand,
+    Infer_Subcommand,
 ]
 Subcommands = {subcmd.name: subcmd for subcmd in _Subcommand_List}
 
