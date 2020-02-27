@@ -12,7 +12,7 @@ importlib_resources==0.4.0
 semantic_version==2.6.0
 sacred==0.7.3
 pymongo==3.6.0
-GitPython==2.1.8
+GitPython==3.1.0
 tabulate==0.8.2
 plotly==2.3.0
 pandas==0.23.4
