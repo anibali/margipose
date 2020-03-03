@@ -1,0 +1,12 @@
+name: margipose
+channels:
+  - pytorch
+  - conda-forge
+dependencies:
+  - python=3.7.4
+  - cuda100=1.0
+  - magma-cuda100=2.4.0
+  - "pytorch=1.0.0=py3.7_cuda10.0.130_cudnn7.4.1_1"
+  - torchvision=0.2.1
+  - ffmpeg=3.4
+  - graphviz=2.40.1

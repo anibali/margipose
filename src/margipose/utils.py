@@ -226,6 +226,9 @@ def timer(meter, n=1):
 def generator_timer(iterable, meter):
     iterator = iter(iterable)
     while True:
-        with timer(meter):
-            vals = next(iterator)
-        yield vals
+        try:
+            with timer(meter):
+                vals = next(iterator)
+            yield vals
+        except StopIteration:
+            return

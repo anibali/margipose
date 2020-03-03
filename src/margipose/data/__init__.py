@@ -1,5 +1,5 @@
 from abc import ABCMeta, abstractmethod
-from collections import Mapping, Sequence
+from collections.abc import Mapping, Sequence
 
 import torch
 from pose3d_utils.camera import CameraIntrinsics

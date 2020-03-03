@@ -1,6 +1,6 @@
 import PIL.Image
 import torchvision.transforms.functional as tr
-from collections import Sequence
+from collections.abc import Sequence
 
 
 def normalize_pixels(tensor, mean, std):
