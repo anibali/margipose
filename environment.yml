@@ -11,3 +11,4 @@ dependencies:
   - x264=20131218  # The ffmpeg 3.4 conda package does not pin this dependency correctly.
   - ffmpeg=3.4
   - graphviz=2.40.1
+  - ezc3d=1.1.1

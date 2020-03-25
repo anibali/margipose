@@ -21,3 +21,9 @@ git+https://github.com/anibali/tele.git@e2b0af5f28100abd581dbf3871bee90b178a5c98
 git+https://github.com/anibali/pose3d-utils@9251f832d9b7aa38e1e5b592965e5f557317ec36#egg=pose3d-utils
 git+https://github.com/anibali/torchdata.git@d52d0c8b9307389eadfba643ec1bb0ef77bc210e#egg=torchdata
 pytest==3.8.2
+
+-e /home/aiden/Projects/PyTorch/aspset
+-e /home/aiden/Projects/PyTorch/posekit
+tvl-backends-opencv==0.1.0b16
+phx-class-registry==3.0.5
+toolz==0.10.0

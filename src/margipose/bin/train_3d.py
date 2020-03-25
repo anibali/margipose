@@ -236,6 +236,7 @@ ex.add_named_config('1cycle', optim_algorithm='1cycle', epochs=150, lr=1.0,
 # Predefined dataset configuration sets
 ex.add_named_config('mpi3d', train_datasets=['mpi3d-trainval', 'mpii-trainval'], val_datasets=[])
 ex.add_named_config('h36m', train_datasets=['h36m-trainval', 'mpii-trainval'], val_datasets=[])
+ex.add_named_config('aspset', train_datasets=['aspset-train', 'mpii-trainval'], val_datasets=['aspset-val'])
 
 # Configuration for a quick run (useful for debugging)
 ex.add_named_config('quick', out_dir='', epochs=10, tags=['quick'], quick=True,

@@ -1,13 +1,13 @@
-from os import path, environ
 import re
+from os import path, environ
 
 from margipose.data import PoseDataset
-from margipose.data.mpi_inf_3dhp import MpiInf3dDataset
+from margipose.data.asp import AspsetDataset
 from margipose.data.h36m import H36MDataset
-from margipose.data.mpii import MpiiDataset
 from margipose.data.mixed import MixedPoseDataset
+from margipose.data.mpi_inf_3dhp import MpiInf3dDataset
+from margipose.data.mpii import MpiiDataset
 from margipose.data_specs import DataSpecs
-
 
 # A custom base data directory can be set using the MARGIPOSE_BASE_DATA_DIR environment variable,
 # which is useful when running `margipose` outside of a Docker container.
@@ -46,6 +46,14 @@ def get_dataset(dataset_name, data_specs=None, use_aug=False) -> PoseDataset:
         return H36MDataset(path.join(Base_Data_Dir, 'h36m'),
                            data_specs=data_specs, subset=subset,
                            use_aug=(use_aug and subset != 'test'))
+
+    # ASPset
+    aspset_match = re.match('aspset-(train|val|trainval|test)', dataset_name)
+    if aspset_match:
+        subset = aspset_match[1]
+        return AspsetDataset(path.join(Base_Data_Dir, 'aspset'),
+                             data_specs=data_specs, subset=subset,
+                             use_aug=(use_aug and subset != 'test'))
 
     # MPII Human Pose (2D)
     mpii_match = re.match('mpii-(train|val|trainval|test)', dataset_name)
