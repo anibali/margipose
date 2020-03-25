@@ -194,6 +194,8 @@ class MpiInf3dDataset(PoseDataset):
                 f['joints3d'][frame_ref.camera_id, frame_ref.frame_index]
             )
             # Scale the skeleton to match the universal skeleton size
+            # FIXME: This is actually a bug! The skeleton should be made root-relative, scaled,
+            #        then made absolute again!
             original_skel.div_(f['scale'][0])
 
         if self.skeleton_desc.canonical:

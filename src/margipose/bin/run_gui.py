@@ -259,12 +259,13 @@ class MainGUIApp(tk.Tk):
             ax2 = fig.add_subplot(1, 2, 2)
             ax2.imshow(self.current_example['input_image'])
 
+            ground_truth = root_relative(self.current_example['gt_skel']['original'])
             for i, skel in enumerate(skels):
                 alpha = 1 / (3 ** i)
-                skel3d = skel['camera_space']
+                skel3d = root_relative(skel['camera_space'])
                 if self.is_aligned:
-                    skel3d = apply_rigid_alignment(skel3d, self.current_example['gt_skel']['original'])
-                plot_skeleton_on_axes3d(root_relative(skel3d), CanonicalSkeletonDesc,
+                    skel3d = apply_rigid_alignment(skel3d, ground_truth)
+                plot_skeleton_on_axes3d(skel3d, CanonicalSkeletonDesc,
                                         ax1, invert=True, alpha=alpha)
                 plot_skeleton_on_axes(skel['image_space'], CanonicalSkeletonDesc, ax2, alpha=alpha)
 

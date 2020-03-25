@@ -28,8 +28,9 @@ class SkeletonDesc:
 
     @property
     def canonical(self):
-        # NOTE: A more thorough check will be required if there are other 17-joint skeletons
-        return self.n_joints == CanonicalSkeletonDesc.n_joints
+        # NOTE: A more thorough check would be nice
+        return self.n_joints == CanonicalSkeletonDesc.n_joints \
+               and self.joint_names == CanonicalSkeletonDesc.joint_names
 
     @property
     def root_joint_id(self):

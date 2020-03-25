@@ -64,7 +64,7 @@ class Reporter:
 
         from tele.console import views
         if self.with_val:
-            meters_to_print = ['train_loss', 'val_loss', 'train_pck', 'val_pck']
+            meters_to_print = ['train_loss', 'val_loss', 'train_pck', 'val_pck', 'val_mpjpe']
         else:
             meters_to_print = ['train_loss', 'train_pck']
         self.telemetry.sink(tele.console.Conf(), [
