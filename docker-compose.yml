@@ -12,7 +12,7 @@ services:
       - /data/mpii:/datasets/mpii:rw
       # Other volume mounts.
       - .:/app
-      - ~/.torch/models:/home/user/.torch/models:rw
+      - ~/.cache/torch/checkpoints:/home/user/.cache/torch/checkpoints:rw
       - /etc/localtime:/etc/localtime:ro
       - /tmp/.X11-unix:/tmp/.X11-unix:rw
       - /etc/hostname:/etc/hostname:ro
