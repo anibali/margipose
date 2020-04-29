@@ -109,6 +109,12 @@ Pretrained models are available for download:
 * [margipose-h36m.pth](https://cloudstor.aarnet.edu.au/plus/s/RisOjU8YwqUXFI7) [221.6 MB]
   * Trained on Human3.6M and MPII examples
 
+You can try out the pretrained model like so:
+
+```bash
+./run.sh margipose infer --model margipose-mpi3d.pth --image resources/man_running.jpg
+```
+
 ## License and citation
 
 (C) 2018 Aiden Nibali
