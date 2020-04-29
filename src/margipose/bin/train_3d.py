@@ -254,13 +254,15 @@ ex.add_config(
     deterministic=False,
     train_examples=32000,
     val_examples=1600,
+    use_aug=True,
 )
 
 
 @ex.main
 def sacred_main(_run: Run, seed, showoff, out_dir, batch_size, epochs, tags, model_desc,
          experiment_id, weights, train_examples, val_examples, deterministic,
-         train_datasets, val_datasets, lr, lr_milestones, lr_gamma, optim_algorithm):
+         train_datasets, val_datasets, lr, lr_milestones, lr_gamma, optim_algorithm,
+         use_aug):
     seed_all(seed)
     init_algorithms(deterministic=deterministic)
 
@@ -290,7 +292,7 @@ def sacred_main(_run: Run, seed, showoff, out_dir, batch_size, epochs, tags, mod
     ####
 
     train_loader = create_train_dataloader(
-        train_datasets, model.data_specs, batch_size, train_examples)
+        train_datasets, model.data_specs, batch_size, train_examples, use_aug)
     if len(val_datasets) > 0:
         val_loader = create_val_dataloader(
             val_datasets, model.data_specs, batch_size, val_examples)

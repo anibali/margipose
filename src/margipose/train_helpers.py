@@ -94,9 +94,10 @@ def _create_dataloader(dataset_names, data_specs, batch_size, examples_per_epoch
     )
 
 
-def create_train_dataloader(dataset_names, data_specs, batch_size, examples_per_epoch):
+def create_train_dataloader(dataset_names, data_specs, batch_size, examples_per_epoch,
+                            use_aug=True):
     return _create_dataloader(dataset_names, data_specs, batch_size, examples_per_epoch,
-                              use_aug=True)
+                              use_aug)
 
 
 def create_val_dataloader(dataset_names, data_specs, batch_size, examples_per_epoch):
