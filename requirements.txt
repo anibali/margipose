@@ -1,6 +1,6 @@
 graphviz==0.8
 numpy==1.16.4
-Pillow==6.1.0
+Pillow==6.2.2
 tqdm==4.19.5
 scipy==1.4.1
 torch==1.0.1.post2
