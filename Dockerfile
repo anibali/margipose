@@ -34,7 +34,7 @@ RUN curl -sLo ~/miniconda.sh https://repo.continuum.io/miniconda/Miniconda3-4.7.
 
 # Setup conda environment
 COPY environment.yml .
-RUN conda env update --file environment.yml
+RUN conda env update --name base
 
 # Use tkinter as the default matplotlib backend
 RUN mkdir -p $HOME/.config/matplotlib \
@@ -47,7 +47,7 @@ RUN pip install -r requirements.txt
 # Replace Pillow with the faster Pillow-SIMD (optional)
 RUN pip uninstall -y pillow \
  && sudo apt-get update && sudo apt-get install -y gcc libjpeg8-dev zlib1g-dev \
- && pip install pillow-simd==6.1.0.post1 \
+ && pip install pillow-simd==6.2.2post1 \
  && sudo apt-get remove -y gcc \
  && sudo apt-get autoremove -y \
  && sudo rm -rf /var/lib/apt/lists/*
