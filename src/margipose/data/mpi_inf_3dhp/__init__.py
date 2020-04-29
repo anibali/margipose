@@ -123,6 +123,8 @@ def augment_background(img, mask, bg):
 
 
 class MpiInf3dDataset(PoseDataset):
+    use_incorrect_scaling_origin = False
+
     def __init__(self, data_dir, data_specs=None, use_aug=False, disable_mask_aug=False):
         if data_specs is None:
             data_specs = DataSpecs(
@@ -193,21 +195,37 @@ class MpiInf3dDataset(PoseDataset):
             original_skel = torch.from_numpy(
                 f['joints3d'][frame_ref.camera_id, frame_ref.frame_index]
             )
-            # Scale the skeleton to match the universal skeleton size
-            # FIXME: This is actually a bug! The skeleton should be made root-relative, scaled,
-            #        then made absolute again!
-            original_skel.div_(f['scale'][0])
+            # Load universal scale factor
+            scale = f['scale'][0]
+
+        if original_skel.size(-2) == MpiInf3dhpSkeletonDesc.n_joints:
+            # The training/validation skeletons have 28 joints.
+            skel_desc = MpiInf3dhpSkeletonDesc
+        elif original_skel.size(-2) == CanonicalSkeletonDesc.n_joints:
+            # The test set skeletons have the 17 canonical joints only.
+            skel_desc = CanonicalSkeletonDesc
+        else:
+            raise Exception('unexpected number of joints: ' + original_skel.size(-2))
+
+        # Scale the skeleton to match the universal skeleton size
+        if self.use_incorrect_scaling_origin:
+            # This is old buggy behaviour which scales about the coordinate system origin instead
+            # of the root joint.
+            original_skel /= scale
+        else:
+            root = original_skel.narrow(-2, skel_desc.root_joint_id, 1).clone()
+            original_skel -= root
+            original_skel /= scale
+            original_skel += root
 
         if self.skeleton_desc.canonical:
-            if original_skel.size(-2) == MpiInf3dhpSkeletonDesc.n_joints:
-                # The training/validation skeletons have 28 joints.
+            if skel_desc == MpiInf3dhpSkeletonDesc:
                 original_skel = self._mpi_inf_3dhp_to_canonical_skeleton(original_skel)
-            elif original_skel.size(-2) == CanonicalSkeletonDesc.n_joints:
-                # The test set skeletons have the 17 canonical joints only.
+            elif skel_desc == CanonicalSkeletonDesc.n_joints:
                 # No conversion necessary.
                 pass
             else:
-                raise Exception('unexpected number of joints: ' + original_skel.size(-2))
+                raise Exception()
         return original_skel
 
     def _evaluate_3d(self, index, original_skel, norm_pred, camera_intrinsics, transform_opts):

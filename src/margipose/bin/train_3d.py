@@ -13,6 +13,7 @@ from sacred.run import Run
 from tele.meter import ValueMeter, MeanValueMeter
 
 from margipose.cli import Subcommand
+from margipose.data.mpi_inf_3dhp import MpiInf3dDataset
 from margipose.dsntnn import average_loss
 from margipose.hyperparam_scheduler import make_1cycle
 from margipose.models import create_model
@@ -255,6 +256,7 @@ ex.add_config(
     train_examples=32000,
     val_examples=1600,
     use_aug=True,
+    use_incorrect_scaling_origin=False,
 )
 
 
@@ -262,7 +264,7 @@ ex.add_config(
 def sacred_main(_run: Run, seed, showoff, out_dir, batch_size, epochs, tags, model_desc,
          experiment_id, weights, train_examples, val_examples, deterministic,
          train_datasets, val_datasets, lr, lr_milestones, lr_gamma, optim_algorithm,
-         use_aug):
+         use_aug, use_incorrect_scaling_origin):
     seed_all(seed)
     init_algorithms(deterministic=deterministic)
 
@@ -290,6 +292,8 @@ def sacred_main(_run: Run, seed, showoff, out_dir, batch_size, epochs, tags, mod
     ####
     # Data
     ####
+
+    MpiInf3dDataset.use_incorrect_scaling_origin = use_incorrect_scaling_origin
 
     train_loader = create_train_dataloader(
         train_datasets, model.data_specs, batch_size, train_examples, use_aug)
