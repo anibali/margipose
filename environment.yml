@@ -8,5 +8,6 @@ dependencies:
   - magma-cuda100=2.4.0
   - "pytorch=1.0.0=py3.7_cuda10.0.130_cudnn7.4.1_1"
   - torchvision=0.2.1
+  - x264=20131218  # The ffmpeg 3.4 conda package does not pin this dependency correctly.
   - ffmpeg=3.4
   - graphviz=2.40.1

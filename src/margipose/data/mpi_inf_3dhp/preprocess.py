@@ -55,15 +55,18 @@ def process_camera_video(in_dir, out_dir, camera_id, frame_indices):
 
         video_file = path.join(in_dir, subdir, 'video_%d.avi' % camera_id)
 
-        with TemporaryDirectory() as tmp_dir:
-            call([
+        with TemporaryDirectory(prefix='tmp_', dir=path.join(out_dir)) as tmp_dir:
+            retcode = call([
                 'ffmpeg',
-                '-nostats', '-loglevel', '0',
+                '-nostats', '-loglevel', '16',
                 '-i', video_file,
                 '-vf', 'scale=768:768',
                 '-qscale:v', '3',
                 path.join(tmp_dir, 'img_%06d.{}'.format(ext))
             ])
+
+            if retcode != 0:
+                raise Exception(f'failed to extract frames from "{video_file}"')
 
             for i in frame_indices:
                 filename = 'img_%06d.%s' % (i + 1, ext)
