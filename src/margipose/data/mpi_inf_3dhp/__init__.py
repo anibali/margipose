@@ -149,7 +149,7 @@ class MpiInf3dDataset(PoseDataset):
             mat_annot_file = path.join(path.dirname(metadata_file), 'annot_data.mat')
             if path.isfile(mat_annot_file):
                 with h5py.File(mat_annot_file, 'r') as f:
-                    activity_ids = f['activity_annotation'].value.flatten().astype(int)
+                    activity_ids = f['activity_annotation'][:].flatten().astype(int)
 
             with h5py.File(metadata_file, 'r') as f:
                 keys = f['interesting_frames'].keys()
@@ -198,14 +198,14 @@ class MpiInf3dDataset(PoseDataset):
             # Load universal scale factor
             scale = f['scale'][0]
 
-        if original_skel.size(-2) == MpiInf3dhpSkeletonDesc.n_joints:
+        if original_skel.shape[-2] == MpiInf3dhpSkeletonDesc.n_joints:
             # The training/validation skeletons have 28 joints.
             skel_desc = MpiInf3dhpSkeletonDesc
-        elif original_skel.size(-2) == CanonicalSkeletonDesc.n_joints:
+        elif original_skel.shape[-2] == CanonicalSkeletonDesc.n_joints:
             # The test set skeletons have the 17 canonical joints only.
             skel_desc = CanonicalSkeletonDesc
         else:
-            raise Exception('unexpected number of joints: ' + original_skel.size(-2))
+            raise Exception('unexpected number of joints: ' + original_skel.shape[-2])
 
         # Scale the skeleton to match the universal skeleton size
         if self.use_incorrect_scaling_origin:
@@ -221,7 +221,7 @@ class MpiInf3dDataset(PoseDataset):
         if self.skeleton_desc.canonical:
             if skel_desc == MpiInf3dhpSkeletonDesc:
                 original_skel = self._mpi_inf_3dhp_to_canonical_skeleton(original_skel)
-            elif skel_desc == CanonicalSkeletonDesc.n_joints:
+            elif skel_desc == CanonicalSkeletonDesc:
                 # No conversion necessary.
                 pass
             else:

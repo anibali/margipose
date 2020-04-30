@@ -24,7 +24,7 @@ Constants = {
     'n_cameras': 14,
     # Per-sequence information extracted from "mpii_get_sequence_info.m"
     'seq_info': json.loads(read_text('margipose.data.mpi_inf_3dhp', 'sequence_info.json')),
-    # Root joint index (pelvis)
+    # Root joint index (pelvis) for training/validation data
     'root_joint': 4,
     # Videos with known problems
     'blacklist': {

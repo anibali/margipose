@@ -14,8 +14,8 @@ import PIL.ImageOps
 import PIL.ImageFilter
 import PIL.ImageChops
 
-from margipose.data.mpi_inf_3dhp.common import Constants, Annotations
-from margipose.data.skeleton import absolute_to_root_relative
+from margipose.data.mpi_inf_3dhp.common import Constants, Annotations, MpiInf3dhpSkeletonDesc
+from margipose.data.skeleton import absolute_to_root_relative, CanonicalSkeletonDesc
 
 
 def _progress(iterator, name):
@@ -102,26 +102,36 @@ def interesting_frame_indices(annot, camera_id, n_frames):
     return frame_indices
 
 
-def _add_annotation_metadata(f, annot, n_frames):
-    ds = f.create_dataset(
-        'joints3d',
-        (Constants['n_cameras'], n_frames, 28, 3),
-        dtype='f8'
-    )
-    ds[:] = annot.annot3[:, :n_frames]
+def _calculate_univ_scale_factor(annot3, univ_annot3, skel_desc):
+    rel_annot3 = absolute_to_root_relative(torch.as_tensor(annot3), skel_desc.root_joint_id)
+    rel_univ = absolute_to_root_relative(torch.as_tensor(univ_annot3), skel_desc.root_joint_id)
 
-    ds = f.create_dataset(
-        'scale',
-        (1,),
-        dtype='f8'
-    )
-    root_index = Constants['root_joint']
-    rel_annot3 = absolute_to_root_relative(torch.from_numpy(annot.annot3), root_index)
-    rel_univ = absolute_to_root_relative(torch.from_numpy(annot.univ_annot3), root_index)
+    # NOTE: annot3 and univ_annot3 are not congruent for the revised release of TS6. The
+    #       discrepancies appear for the knee and ankle joints only. It seems like it is the
+    #       universal annotations that are incorrect, since annot3 projects to annot2 correctly.
+    exclude = {'pelvis', 'left_knee', 'left_ankle', 'right_knee', 'right_ankle'}
+    include_indices = [i for i, name in enumerate(skel_desc.joint_names) if not name in exclude]
+    rel_annot3 = rel_annot3[..., include_indices, :]
+    rel_univ = rel_univ[..., include_indices, :]
+
     non_zero = rel_univ.abs().gt(1e-6)
     ratio = (rel_annot3 / rel_univ).masked_select(non_zero)
-    assert ratio.std().item() < 1e-6
-    ds[:] = ratio.mean().item()
+
+    scale = float(ratio.median())
+    rel_univ_recons = rel_annot3 / scale
+    err_count = (rel_univ_recons - rel_univ).abs().gt(1e-6).sum()
+    assert err_count == 0
+
+    return scale
+
+
+def _add_annotation_metadata(f, annot3, univ_annot3, skel_desc):
+    ds = f.create_dataset('joints3d', annot3.shape, dtype='f8')
+    ds[:] = annot3
+
+    scale = _calculate_univ_scale_factor(annot3, univ_annot3, skel_desc)
+    ds = f.create_dataset('scale', (1,), dtype='f8')
+    ds[:] = scale
 
 
 def process_sequence(in_dir, out_dir, n_frames, blacklist):
@@ -135,7 +145,12 @@ def process_sequence(in_dir, out_dir, n_frames, blacklist):
 
     with h5py.File(path.join(out_dir, 'metadata.h5'), 'w') as f:
         annot = Annotations(loadmat(path.join(out_dir, 'annot.mat')))
-        _add_annotation_metadata(f, annot, n_frames)
+        _add_annotation_metadata(
+            f,
+            annot.annot3[:, :n_frames],
+            annot.univ_annot3[:, :n_frames],
+            MpiInf3dhpSkeletonDesc,
+        )
         for camera_id in _progress(Constants['vnect_cameras'], 'Cameras'):
             if camera_id not in blacklist:
                 process_camera_video(in_dir, out_dir, camera_id, range(n_frames))
@@ -218,23 +233,13 @@ def preprocess_test_data(src_dir, dest_dir):
                     for line in lines:
                         cam_file.write(line + '\n')
 
-                ds = f.create_dataset('joints3d', (1, n_frames, 17, 3), dtype='f8')
-                ds[:] = np.array(annot3).reshape(1, n_frames, 17, 3)
-
-                root_index = Constants['root_joint']
-                rel_annot3 = absolute_to_root_relative(torch.from_numpy(annot3), root_index)
-                rel_univ = absolute_to_root_relative(torch.from_numpy(univ_annot3), root_index)
-                non_zero = rel_univ.abs().gt(1e-6)
-                ratio = (rel_annot3 / rel_univ).masked_select(non_zero)
-                assert ratio.std() < 1e-6
-                ds = f.create_dataset('scale', (1,), dtype='f8')
-                ds[:] = ratio.mean()
+                _add_annotation_metadata(f, annot3, univ_annot3, CanonicalSkeletonDesc)
 
                 indices = []
                 for frame_index, is_valid in enumerate(np.array(annot['valid_frame']).flatten()):
                     if is_valid == 1:
                         indices.append(frame_index)
-                ds = f.create_dataset( 'interesting_frames/camera0', (len(indices),), dtype='i8')
+                ds = f.create_dataset('interesting_frames/camera0', (len(indices),), dtype='i8')
                 ds[:] = np.array(indices)
 
 
