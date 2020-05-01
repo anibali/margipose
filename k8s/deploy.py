@@ -70,7 +70,7 @@ def deploy(args):
             client.V1VolumeMount(mount_path='/datasets/h36m', name='h36m', read_only=True),
             client.V1VolumeMount(mount_path='/datasets/mpi3d', name='mpi3d', read_only=True),
             client.V1VolumeMount(mount_path='/datasets/mpii', name='mpii', read_only=True),
-            client.V1VolumeMount(mount_path='/home/user/.torch/models', name='pretrained-models', read_only=False),
+            client.V1VolumeMount(mount_path='/home/user/.cache/torch/checkpoints', name='pretrained-models', read_only=False),
             client.V1VolumeMount(mount_path='/app/out', name='output', read_only=False),
         ],
     )
@@ -82,12 +82,12 @@ def deploy(args):
         volumes=[
             _host_volume(
                 name='h36m',
-                path='/nfs/datasets/public/Human3.6M/processed',
+                path='/nfs/datasets/public/_Old/Human3.6M/processed',
                 type='Directory',
             ),
             _host_volume(
                 name='mpi3d',
-                path='/nfs/datasets/public/MPI-INF-3DHP',
+                path='/nfs/datasets/public/_Old/MPI-INF-3DHP',
                 type='Directory',
             ),
             _host_volume(
