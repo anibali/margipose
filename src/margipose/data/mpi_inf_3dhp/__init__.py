@@ -123,7 +123,7 @@ def augment_background(img, mask, bg):
 
 
 class MpiInf3dDataset(PoseDataset):
-    use_incorrect_scaling_origin = False
+    preserve_root_joint_at_univ_scale = False
 
     def __init__(self, data_dir, data_specs=None, use_aug=False, disable_mask_aug=False):
         if data_specs is None:
@@ -160,6 +160,7 @@ class MpiInf3dDataset(PoseDataset):
                         if activity_ids is not None:
                             activity_id = activity_ids[frame_index]
                         frame_refs.append(FrameRef(subject_id, sequence_id, camera_id, frame_index, activity_id))
+                self.univ_scale_factor = f['scale'][0]
 
         self.data_dir = data_dir
         self.use_aug = use_aug
@@ -187,7 +188,7 @@ class MpiInf3dDataset(PoseDataset):
 
         return self._mpi_inf_3dhp_to_canonical_skeleton(skel)
 
-    def get_univ_skeleton(self, index):
+    def _get_skeleton_3d(self, index):
         frame_ref = self.frame_refs[index]
         metadata_file = path.join(self.data_dir, frame_ref.metadata_file)
         with h5py.File(metadata_file, 'r') as f:
@@ -195,8 +196,6 @@ class MpiInf3dDataset(PoseDataset):
             original_skel = torch.from_numpy(
                 f['joints3d'][frame_ref.camera_id, frame_ref.frame_index]
             )
-            # Load universal scale factor
-            scale = f['scale'][0]
 
         if original_skel.shape[-2] == MpiInf3dhpSkeletonDesc.n_joints:
             # The training/validation skeletons have 28 joints.
@@ -207,17 +206,6 @@ class MpiInf3dDataset(PoseDataset):
         else:
             raise Exception('unexpected number of joints: ' + original_skel.shape[-2])
 
-        # Scale the skeleton to match the universal skeleton size
-        if self.use_incorrect_scaling_origin:
-            # This is old buggy behaviour which scales about the coordinate system origin instead
-            # of the root joint.
-            original_skel /= scale
-        else:
-            root = original_skel.narrow(-2, skel_desc.root_joint_id, 1).clone()
-            original_skel -= root
-            original_skel /= scale
-            original_skel += root
-
         if self.skeleton_desc.canonical:
             if skel_desc == MpiInf3dhpSkeletonDesc:
                 original_skel = self._mpi_inf_3dhp_to_canonical_skeleton(original_skel)
@@ -226,7 +214,27 @@ class MpiInf3dDataset(PoseDataset):
                 pass
             else:
                 raise Exception()
-        return original_skel
+            skel_desc = CanonicalSkeletonDesc
+
+        return original_skel, skel_desc
+
+    def _to_univ_scale(self, skel_3d, skel_desc):
+        univ_skel_3d = skel_3d.clone()
+
+        # Scale the skeleton to match the universal skeleton size
+        if self.preserve_root_joint_at_univ_scale:
+            # Scale the skeleton about the root joint position. This should give the same
+            # joint position coordinates as the "univ_annot3" annotations.
+            root = skel_3d[..., skel_desc.root_joint_id:skel_desc.root_joint_id+1, :]
+            univ_skel_3d -= root
+            univ_skel_3d /= self.univ_scale_factor
+            univ_skel_3d += root
+        else:
+            # Scale the skeleton about the camera position. Useful for breaking depth/scale
+            # ambiguity.
+            univ_skel_3d /= self.univ_scale_factor
+
+        return univ_skel_3d
 
     def _evaluate_3d(self, index, original_skel, norm_pred, camera_intrinsics, transform_opts):
         assert self.skeleton_desc.canonical, 'can only evaluate canonical skeletons'
@@ -281,7 +289,9 @@ class MpiInf3dDataset(PoseDataset):
 
     def __getitem__(self, index):
         frame_ref = self.frame_refs[index]
-        orig_skel = self.get_univ_skeleton(index)
+
+        skel_3d, skel_desc = self._get_skeleton_3d(index)
+        orig_skel = self._to_univ_scale(skel_3d, skel_desc)
 
         if self.without_image:
             orig_image = None
@@ -303,12 +313,11 @@ class MpiInf3dDataset(PoseDataset):
         extrinsics = cam_cal['extrinsics']
 
         # Bounding box details
-        joints2d = homogeneous_to_cartesian(
-            orig_camera.project(ensure_homogeneous(orig_skel, d=3)))
-        min_x = joints2d[:, 0].min().item()
-        max_x = joints2d[:, 0].max().item()
-        min_y = joints2d[:, 1].min().item()
-        max_y = joints2d[:, 1].max().item()
+        skel_2d = orig_camera.project_cartesian(skel_3d)
+        min_x = skel_2d[:, 0].min().item()
+        max_x = skel_2d[:, 0].max().item()
+        min_y = skel_2d[:, 1].min().item()
+        max_y = skel_2d[:, 1].max().item()
         bb_cx = (min_x + max_x) / 2
         bb_cy = (min_y + max_y) / 2
         bb_size = 1.5 * max(max_x - min_x, max_y - min_y)

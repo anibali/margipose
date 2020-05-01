@@ -256,7 +256,7 @@ ex.add_config(
     train_examples=32000,
     val_examples=1600,
     use_aug=True,
-    use_incorrect_scaling_origin=False,
+    preserve_root_joint_at_univ_scale=False,
 )
 
 
@@ -264,7 +264,7 @@ ex.add_config(
 def sacred_main(_run: Run, seed, showoff, out_dir, batch_size, epochs, tags, model_desc,
          experiment_id, weights, train_examples, val_examples, deterministic,
          train_datasets, val_datasets, lr, lr_milestones, lr_gamma, optim_algorithm,
-         use_aug, use_incorrect_scaling_origin):
+         use_aug, preserve_root_joint_at_univ_scale):
     seed_all(seed)
     init_algorithms(deterministic=deterministic)
 
@@ -293,7 +293,7 @@ def sacred_main(_run: Run, seed, showoff, out_dir, batch_size, epochs, tags, mod
     # Data
     ####
 
-    MpiInf3dDataset.use_incorrect_scaling_origin = use_incorrect_scaling_origin
+    MpiInf3dDataset.preserve_root_joint_at_univ_scale = preserve_root_joint_at_univ_scale
 
     train_loader = create_train_dataloader(
         train_datasets, model.data_specs, batch_size, train_examples, use_aug)
