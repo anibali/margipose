@@ -124,6 +124,7 @@ def augment_background(img, mask, bg):
 
 class MpiInf3dDataset(PoseDataset):
     preserve_root_joint_at_univ_scale = False
+    load_images_from_video = False
 
     def __init__(self, data_dir, data_specs=None, use_aug=False, disable_mask_aug=False):
         if data_specs is None:
@@ -300,8 +301,22 @@ class MpiInf3dDataset(PoseDataset):
             orig_image = None
             img_w = img_h = 768
         else:
-            orig_image = Image.open(path.join(self.data_dir, frame_ref.image_file))
-            img_w, img_h = orig_image.size
+            is_test_set = path.basename(self.data_dir) == 'test'
+            if self.load_images_from_video and not is_test_set:
+                from margipose.data.get_dataset import Base_Data_Dir
+                from tvl import VideoLoader
+                raw_data_dir = path.join(Base_Data_Dir, 'raw-mpi3d', 'train')
+                video_file = path.join(raw_data_dir, 'S{}/Seq{}/imageSequence/video_{}.mkv'.format(
+                    frame_ref.subject_id, frame_ref.sequence_id, frame_ref.camera_id
+                ))
+                vl = VideoLoader(video_file, device='cpu', dtype=torch.uint8,
+                                 backend_opts={'out_width': 768, 'out_height': 768})
+                orig_image_tensor = vl.select_frame(frame_ref.frame_index)
+                orig_image = Image.fromarray(orig_image_tensor.permute(1, 2, 0).numpy())
+                img_w, img_h = orig_image.size
+            else:
+                orig_image = Image.open(path.join(self.data_dir, frame_ref.image_file))
+                img_w, img_h = orig_image.size
 
         with open(path.join(self.data_dir, frame_ref.camera_file), 'r') as f:
             cam_cal = parse_camera_calibration(f)[frame_ref.camera_id]

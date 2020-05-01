@@ -16,6 +16,8 @@ GitPython==3.1.0
 tabulate==0.8.2
 plotly==2.3.0
 pandas==0.25.3
+opencv-python==4.2.0.34
+tvl[OpenCvBackend]==0.1.0b16
 git+https://github.com/anibali/pyshowoff.git@3396cb916c390886873fb0a6b8515f91c0c1574c#egg=pyshowoff
 git+https://github.com/anibali/tele.git@e2b0af5f28100abd581dbf3871bee90b178a5c98#egg=tele
 git+https://github.com/anibali/pose3d-utils@9251f832d9b7aa38e1e5b592965e5f557317ec36#egg=pose3d-utils

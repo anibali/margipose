@@ -261,6 +261,7 @@ ex.add_config(
     val_examples=1600,
     use_aug=True,
     preserve_root_joint_at_univ_scale=False,
+    load_images_from_video=False,
 )
 
 
@@ -268,7 +269,7 @@ ex.add_config(
 def sacred_main(_run: Run, seed, showoff, out_dir, batch_size, epochs, tags, model_desc,
          experiment_id, weights, train_examples, val_examples, deterministic,
          train_datasets, val_datasets, lr, lr_milestones, lr_gamma, optim_algorithm,
-         use_aug, preserve_root_joint_at_univ_scale):
+         use_aug, preserve_root_joint_at_univ_scale, load_images_from_video):
     seed_all(seed)
     init_algorithms(deterministic=deterministic)
 
@@ -298,6 +299,7 @@ def sacred_main(_run: Run, seed, showoff, out_dir, batch_size, epochs, tags, mod
     ####
 
     MpiInf3dDataset.preserve_root_joint_at_univ_scale = preserve_root_joint_at_univ_scale
+    MpiInf3dDataset.load_images_from_video = load_images_from_video
 
     train_loader = create_train_dataloader(
         train_datasets, model.data_specs, batch_size, train_examples, use_aug)
