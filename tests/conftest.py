@@ -1,11 +1,15 @@
+import os
+
 import pytest
 import torch
+
+from margipose.data.get_dataset import Base_Data_Dir
 
 
 @pytest.fixture
 def skeleton_canonical_univ():
     """Canonical universal skeleton for S1,Seq1,camera0,frame0 of MPI-INF-3DHP."""
-    return torch.Tensor([
+    return torch.as_tensor([
         [ -14.1671, -334.8410, 3685.4099],
         [  -1.8908,  -78.7086, 3697.4800],
         [  12.3105,   -6.8914, 3570.3000],
@@ -29,7 +33,7 @@ def skeleton_canonical_univ():
 @pytest.fixture
 def skeleton_mpi3d_univ():
     """28-joint universal skeleton for S1,Seq1,camera0,frame0 of MPI-INF-3DHP."""
-    return torch.Tensor([
+    return torch.as_tensor([
         [ -26.0276,   98.0811, 3699.6000],
         [ -45.5924,   -6.8788, 3691.5100],
         [ -11.8660,  175.6800, 3705.0600],
@@ -59,3 +63,19 @@ def skeleton_mpi3d_univ():
         [  10.3942, 1414.7500, 3704.4200],
         [  36.6540, 1407.8400, 3701.0500],
     ])
+
+
+@pytest.fixture
+def base_data_dir():
+    dir_path = Base_Data_Dir
+    if not os.path.isdir(dir_path):
+        pytest.skip('base data directory not found')
+    return dir_path
+
+
+@pytest.fixture
+def mpi3d_data_dir(base_data_dir):
+    dir_path = os.path.join(base_data_dir, 'mpi3d')
+    if not os.path.isdir(dir_path):
+        pytest.skip('mpi3d data directory not found')
+    return dir_path
