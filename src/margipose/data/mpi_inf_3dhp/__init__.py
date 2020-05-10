@@ -139,6 +139,7 @@ class MpiInf3dDataset(PoseDataset):
 
         metadata_files = sorted(iglob(path.join(data_dir, 'S*', 'Seq*', 'metadata.h5')))
         frame_refs = []
+        univ_scale_factors = {}
 
         for metadata_file in metadata_files:
             match = re.match(r'.*S(\d+)/Seq(\d+)/metadata.h5', metadata_file)
@@ -160,12 +161,13 @@ class MpiInf3dDataset(PoseDataset):
                         if activity_ids is not None:
                             activity_id = activity_ids[frame_index]
                         frame_refs.append(FrameRef(subject_id, sequence_id, camera_id, frame_index, activity_id))
-                self.univ_scale_factor = f['scale'][0]
+                univ_scale_factors[(subject_id, sequence_id)] = f['scale'][0]
 
         self.data_dir = data_dir
         self.use_aug = use_aug
         self.disable_mask_aug = disable_mask_aug
         self.frame_refs = frame_refs
+        self.univ_scale_factors = univ_scale_factors
         self.without_image = False
         self.multicrop = False
 
@@ -218,7 +220,7 @@ class MpiInf3dDataset(PoseDataset):
 
         return original_skel, skel_desc
 
-    def _to_univ_scale(self, skel_3d, skel_desc):
+    def _to_univ_scale(self, skel_3d, skel_desc, univ_scale_factor):
         univ_skel_3d = skel_3d.clone()
 
         # Scale the skeleton to match the universal skeleton size
@@ -227,12 +229,12 @@ class MpiInf3dDataset(PoseDataset):
             # joint position coordinates as the "univ_annot3" annotations.
             root = skel_3d[..., skel_desc.root_joint_id:skel_desc.root_joint_id+1, :]
             univ_skel_3d -= root
-            univ_skel_3d /= self.univ_scale_factor
+            univ_skel_3d /= univ_scale_factor
             univ_skel_3d += root
         else:
             # Scale the skeleton about the camera position. Useful for breaking depth/scale
             # ambiguity.
-            univ_skel_3d /= self.univ_scale_factor
+            univ_skel_3d /= univ_scale_factor
 
         return univ_skel_3d
 
@@ -291,7 +293,8 @@ class MpiInf3dDataset(PoseDataset):
         frame_ref = self.frame_refs[index]
 
         skel_3d, skel_desc = self._get_skeleton_3d(index)
-        orig_skel = self._to_univ_scale(skel_3d, skel_desc)
+        univ_scale_factor = self.univ_scale_factors[(frame_ref.subject_id, frame_ref.sequence_id)]
+        orig_skel = self._to_univ_scale(skel_3d, skel_desc, univ_scale_factor)
 
         if self.without_image:
             orig_image = None
