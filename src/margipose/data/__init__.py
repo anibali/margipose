@@ -9,8 +9,9 @@ from pose3d_utils.transformers import TransformerContext
 import pose3d_utils.transforms as transforms
 from torch._six import string_classes, int_classes
 from torch.utils.data import Dataset
-from torch.utils.data.dataloader import default_collate, DataLoader, SequentialSampler
-from torch.utils.data.sampler import WeightedRandomSampler
+from torch.utils.data._utils.collate import default_collate
+from torch.utils.data.dataloader import DataLoader
+from torch.utils.data.sampler import WeightedRandomSampler, SequentialSampler
 
 from margipose.data.skeleton import SkeletonDesc, calculate_knee_neck_height, \
     absolute_to_parent_relative, cartesian_to_spherical, calc_relative_scale, \
