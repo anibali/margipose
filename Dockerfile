@@ -1,4 +1,4 @@
-FROM nvidia/cuda:10.0-base-ubuntu16.04
+FROM nvidia/cuda:10.0-base-ubuntu18.04
 
 # Install some basic utilities
 RUN apt-get update && apt-get install -y \
@@ -43,14 +43,6 @@ RUN mkdir -p $HOME/.config/matplotlib \
 # Install other dependencies from pip
 COPY requirements.txt .
 RUN pip install -r requirements.txt
-
-# Replace Pillow with the faster Pillow-SIMD (optional)
-RUN pip uninstall -y pillow \
- && sudo apt-get update && sudo apt-get install -y gcc libjpeg8-dev zlib1g-dev \
- && pip install pillow-simd==6.2.2post1 \
- && sudo apt-get remove -y gcc \
- && sudo apt-get autoremove -y \
- && sudo rm -rf /var/lib/apt/lists/*
 
 COPY --chown=user:user . /app
 RUN pip install -U .
