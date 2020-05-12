@@ -1,5 +1,4 @@
-# Requires Docker Compose 1.19+ and nvidia-docker2.
-version: '2.3'
+version: '3.7'
 services:
   main:
     build: .
@@ -23,6 +22,5 @@ services:
     env_file:
       - showoff/showoff-client.env
     init: true
-    runtime: nvidia
     ipc: host
     network_mode: host

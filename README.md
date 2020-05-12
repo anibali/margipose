@@ -10,7 +10,7 @@ Requirements:
 * Linux
 * Docker
 * Docker Compose
-* `nvidia-docker2` (for GPU support)
+* NVIDIA Container Toolkit (for GPU support)
 
 ### Prepare datasets
 
