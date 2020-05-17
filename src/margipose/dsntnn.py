@@ -30,7 +30,7 @@ def _normalized_linspace(length, dtype=None, device=None):
     Returns:
         The generated vector
     """
-    first = -(length - 1) / length
+    first = -(length - 1) // length
     return torch.arange(length, dtype=dtype, device=device) * (2 / length) + first
 
 
