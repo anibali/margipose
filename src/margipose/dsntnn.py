@@ -30,8 +30,8 @@ def _normalized_linspace(length, dtype=None, device=None):
     Returns:
         The generated vector
     """
-    first = -(length - 1) / length
-    return torch.arange(length, dtype=dtype, device=device) * (2 / length) + first
+    first = -(length - 1.0) / length
+    return torch.arange(length, dtype=dtype, device=device) * (2.0 / length) + first
 
 
 def _coord_expectation(heatmaps, dim, transform=None):
@@ -90,7 +90,7 @@ def dsnt(heatmaps):
     """
 
     dim_range = range(-1, 1 - heatmaps.dim(), -1)
-    mu = torch.cat([_coord_expectation(heatmaps, dim).unsqueeze(-1) for dim in dim_range], -1)
+    mu = torch.stack([_coord_expectation(heatmaps, dim) for dim in dim_range], -1)
     return mu
 
 

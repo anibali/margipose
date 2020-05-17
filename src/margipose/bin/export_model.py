@@ -39,6 +39,7 @@ def main(argv=sys.argv):
     model_desc = model_state['model_desc']
     model = create_model(model_desc)
     model.load_state_dict(model_state['state_dict'])
+    model.eval()
 
     if args.format == 'pytorch':
         new_model_state = {
