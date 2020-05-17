@@ -84,6 +84,10 @@ class HeatmapColumn(nn.Module):
     def forward(self, *inputs):
         mid_in = self.down_layers(inputs[0])
         # Spatial size (width = height = depth). Must divide evenly into # channels
+        # FIXME: The conversion to int generates a warning during tracing, and is not necessary
+        #        since PyTorch 1.5.0. However, it is required for tracing to work at all with prior
+        #        PyTorch versions. When we upgrade to PyTorch 1.5.0, we should change this line.
+        #        See: https://github.com/pytorch/pytorch/issues/27551
         size = int(mid_in.shape[-1])
         if self.heatmap_space == 'xy':
             mid_out = mid_in
