@@ -31,8 +31,7 @@ def _normalized_linspace(length, dtype=None, device=None):
         The generated vector
     """
     first = -(length - 1) / length
-    last = (length - 1) / length
-    return torch.linspace(first, last, length, dtype=dtype, device=device)
+    return torch.arange(length, dtype=dtype, device=device) * (2 / length) + first
 
 
 def _coord_expectation(heatmaps, dim, transform=None):
