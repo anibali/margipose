@@ -84,7 +84,7 @@ class HeatmapColumn(nn.Module):
     def forward(self, *inputs):
         mid_in = self.down_layers(inputs[0])
         # Spatial size (width = height = depth). Must divide evenly into # channels
-        size = int(mid_in.shape[-1])
+        size = mid_in.size(-1)
         if self.heatmap_space == 'xy':
             mid_out = mid_in
         elif self.heatmap_space == 'zy':
