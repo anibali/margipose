@@ -30,6 +30,8 @@ def _normalized_linspace(length, dtype=None, device=None):
     Returns:
         The generated vector
     """
+    if isinstance(length, torch.Tensor):
+        length = length.to(device, dtype)
     first = -(length - 1.0) / length
     return torch.arange(length, dtype=dtype, device=device) * (2.0 / length) + first
 
