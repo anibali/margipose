@@ -16,3 +16,4 @@ def test_onnx_export():
     with TemporaryDirectory() as d:
         onnx_file = os.path.join(d, 'model.onnx')
         onnx.export(model, (dummy_input,), onnx_file, verbose=False)
+        assert os.path.isfile(onnx_file)

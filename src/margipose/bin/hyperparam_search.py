@@ -14,6 +14,7 @@ import plotly.graph_objs as go
 import sacred
 import tele
 import torch
+from dsntnn import average_loss
 from sacred.host_info import get_host_info
 from sacred.run import Run
 from tele.meter import ValueMeter
@@ -21,7 +22,6 @@ from torch.optim import SGD
 from tqdm import tqdm
 
 from margipose.cli import Subcommand
-from margipose.dsntnn import average_loss
 from margipose.models import create_model
 from margipose.models.margipose_model import Default_MargiPose_Desc
 from margipose.models.chatterbox_model import Default_Chatterbox_Desc

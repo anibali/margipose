@@ -9,6 +9,7 @@ import sacred
 import tele
 import torch
 from torch import optim
+from dsntnn import average_loss
 from pose3d_utils.coords import ensure_homogeneous
 from sacred.host_info import get_host_info
 from sacred.run import Run
@@ -16,7 +17,6 @@ from tele.meter import ValueMeter, MeanValueMeter
 
 from margipose.cli import Subcommand
 from margipose.data.mpi_inf_3dhp import MpiInf3dDataset
-from margipose.dsntnn import average_loss
 from margipose.hyperparam_scheduler import make_1cycle
 from margipose.models import create_model
 from margipose.models.margipose_model import Default_MargiPose_Desc

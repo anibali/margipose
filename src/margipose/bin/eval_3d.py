@@ -8,6 +8,7 @@ from time import perf_counter
 
 import torch
 import pandas as pd
+from dsntnn import average_loss
 from pose3d_utils.coords import ensure_homogeneous
 from tele.meter import MeanValueMeter, MedianValueMeter
 from tqdm import tqdm
@@ -17,7 +18,6 @@ from margipose.cli import Subcommand
 from margipose.data import make_dataloader, make_unbatched_dataloader
 from margipose.data.get_dataset import get_dataset
 from margipose.data.skeleton import CanonicalSkeletonDesc, VNect_Common_Skeleton
-from margipose.dsntnn import average_loss
 from margipose.eval import prepare_for_3d_evaluation, gather_3d_metrics
 from margipose.models import load_model
 from margipose.utils import seed_all, init_algorithms

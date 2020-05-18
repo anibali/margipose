@@ -1,9 +1,9 @@
 import pytest
 import torch
+from dsntnn import make_gauss
 from torch.testing import assert_allclose
 
 from margipose.data.skeleton import CanonicalSkeletonDesc
-from margipose.dsntnn import make_gauss
 from margipose.models.chatterbox_model import ChatterboxModel
 from margipose.models.margipose_model import HeatmapColumn, MargiPoseModel
 

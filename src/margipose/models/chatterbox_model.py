@@ -1,11 +1,11 @@
 import torch
+from dsntnn import flat_softmax, dsnt, js_reg_losses, euclidean_losses
 from torch import nn
 from torch.nn.functional import relu, max_pool2d
 from torchvision.models.resnet import BasicBlock, resnet34
 
 from margipose.data.skeleton import CanonicalSkeletonDesc
 from margipose.data_specs import DataSpecs, ImageSpecs, JointsSpecs
-from margipose.dsntnn import flat_softmax, dsnt, js_reg_losses, euclidean_losses
 from margipose.model_factory import ModelFactory
 from margipose.nn_helpers import init_parameters
 

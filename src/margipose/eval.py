@@ -1,5 +1,5 @@
 import torch
-from margipose.dsntnn import euclidean_losses
+from dsntnn import euclidean_losses
 
 from pose3d_utils.coords import ensure_cartesian
 from margipose.data.skeleton import absolute_to_root_relative, apply_rigid_alignment, \

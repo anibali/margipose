@@ -2,7 +2,7 @@ import torch
 from torch import nn
 import torchvision.models
 from pretrainedmodels.models.inceptionv4 import inceptionv4
-from margipose.dsntnn import flat_softmax, dsnt, js_reg_losses, euclidean_losses
+from dsntnn import flat_softmax, dsnt, js_reg_losses, euclidean_losses
 
 from margipose.model_factory import ModelFactory
 from margipose.nn_helpers import init_parameters
