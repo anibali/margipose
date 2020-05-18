@@ -12,13 +12,19 @@ Requirements:
 * Docker Compose
 * NVIDIA Container Toolkit (for GPU support)
 
+### Configure the project
+
+1. Copy `docker-compose.yml.template` to `docker-compose.yml`.
+2. At this stage `docker-compose.yml` will contain example volume mounts for the datasets.
+   You will need to edit the entries for datasets [that you have prepared](#prepare-datasets),
+   and remove the others.
+
+   For example, if you wish to use the MPI-INF-3DHP dataset, you must replace `/host/path/to/mpi3d`
+   with the actual path to the prepared MPI-INF-3DHP data on your computer.
+
 ### Prepare datasets
 
 You only need to prepare the datasets that you are interested in using.
-
-NOTE: Currently `docker-compose.yml` contains example volume mounts for the datasets.
-You will need to edit the entries for datasets that you have prepared, and remove
-the others.
 
 #### Human3.6M
 

@@ -6,9 +6,9 @@ services:
       # Volume mounts for the datasets.
       # Edit to suit your environment. Remove entries for datasets that you don't intend to
       # use.
-      - /data/h36m/processed:/datasets/h36m:ro
-      - /data/fast/mpi_inf_3dhp:/datasets/mpi3d:ro
-      - /data/mpii:/datasets/mpii:rw
+      - /host/path/to/h36m:/datasets/h36m:ro
+      - /host/path/to/mpi3d:/datasets/mpi3d:ro
+      - /host/path/to/mpii:/datasets/mpii:rw
       # Other volume mounts.
       - .:/app
       - ~/.cache/torch/checkpoints:/home/user/.cache/torch/checkpoints:rw
@@ -19,8 +19,8 @@ services:
       - CUDA_DEVICE_ORDER=PCI_BUS_ID
       - DISPLAY
       - PYTHONIOENCODING=utf_8
-    env_file:
-      - showoff/showoff-client.env
+#    env_file:
+#      - showoff/showoff-client.env
     init: true
     ipc: host
     network_mode: host
