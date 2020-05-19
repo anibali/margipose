@@ -43,7 +43,7 @@ the others.
    ```
    $ ./run.sh bash
    $ chmod 777 -R /datasets/mpii
-   python
+   $ python
    >>> from torchdata import mpii
    >>> mpii.install_mpii_dataset('/datasets/mpii')
    ```
