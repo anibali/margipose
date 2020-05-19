@@ -47,7 +47,9 @@ You only need to prepare the datasets that you are interested in using.
    for the MPII Human Pose dataset is bound to `/datasets/mpii` inside the Docker container.
 2. Run the following to download and install the MPII Human Pose dataset:
    ```
-   $ ./run.sh python
+   $ ./run.sh bash
+   $ chmod 777 -R /datasets/mpii
+   $ python
    >>> from torchdata import mpii
    >>> mpii.install_mpii_dataset('/datasets/mpii')
    ```
