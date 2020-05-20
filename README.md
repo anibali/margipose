@@ -14,7 +14,7 @@ Requirements:
 
 ### Configure the project
 
-1. Copy `docker-compose.yml.template` to `docker-compose.yml`.
+1. Copy `docker-compose.yml.example` to `docker-compose.yml`.
 2. At this stage `docker-compose.yml` will contain example volume mounts for the datasets.
    You will need to edit the entries for datasets [that you have prepared](#prepare-datasets),
    and remove the others.
