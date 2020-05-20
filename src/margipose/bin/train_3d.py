@@ -3,10 +3,12 @@
 import datetime
 import json
 from os import environ, path, makedirs
+from collections import namedtuple
 
 import sacred
 import tele
 import torch
+from torch import optim
 from pose3d_utils.coords import ensure_homogeneous
 from sacred.host_info import get_host_info
 from sacred.run import Run
@@ -233,6 +235,8 @@ ex.add_named_config('rmsprop', optim_algorithm='rmsprop', epochs=150, lr=2.5e-3,
                     lr_milestones=[80, 140], lr_gamma=0.1)
 ex.add_named_config('1cycle', optim_algorithm='1cycle', epochs=150, lr=1.0,
                     lr_milestones=None, lr_gamma=None)
+ex.add_named_config('sgd_simple', optim_algorithm='sgd_simple', epochs=150, lr=0.2,
+                    lr_milestones=None, lr_gamma=None)
 
 # Predefined dataset configuration sets
 ex.add_named_config('mpi3d', train_datasets=['mpi3d-trainval', 'mpii-trainval'], val_datasets=[])
@@ -332,9 +336,12 @@ def sacred_main(_run: Run, seed, showoff, out_dir, batch_size, epochs, tags, mod
     ####
 
     if optim_algorithm == '1cycle':
-        from torch import optim
         optimiser = optim.SGD(model.parameters(), lr=0)
         scheduler = make_1cycle(optimiser, epochs * len(train_loader), lr_max=lr, momentum=0.9)
+    elif optim_algorithm == 'sgd_simple':
+        optimiser = optim.SGD(model.parameters(), lr=lr, momentum=0)
+        DummyScheduler = namedtuple('DummyScheduler', 'optimizer')
+        scheduler = DummyScheduler(optimizer=optimiser)
     else:
         scheduler = learning_schedule(
             model.parameters(), optim_algorithm, lr, lr_milestones, lr_gamma)
