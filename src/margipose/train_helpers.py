@@ -36,7 +36,7 @@ def visualise_predictions(preds, batch, dataset):
 
 
 def progress_iter(iterable, name):
-    return tqdm(iterable, desc='{:10s}'.format(name), leave=True, ascii=True)
+    return tqdm(iterable, desc='{:10s}'.format(name), leave=False, ascii=True)
 
 
 def create_showoff_notebook(title, extra_tags) -> pyshowoff.Notebook:

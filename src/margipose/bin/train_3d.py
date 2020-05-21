@@ -10,6 +10,8 @@ import tele
 import torch
 from torch import optim
 from dsntnn import average_loss
+from tqdm import trange, tqdm
+
 from pose3d_utils.coords import ensure_homogeneous
 from sacred.host_info import get_host_info
 from sacred.run import Run
@@ -36,7 +38,7 @@ global_opts = {}
 class Reporter:
     """Helper class for reporting training metrics."""
 
-    def __init__(self, with_val=True):
+    def __init__(self, with_val=True, max_steps=-1):
         meters = {
             'config': ValueMeter(skip_reset=True),
             'host_info': ValueMeter(skip_reset=True),
@@ -61,6 +63,7 @@ class Reporter:
             })
         self.with_val = with_val
         self.telemetry = tele.Telemetry(meters)
+        self.max_steps = max_steps
 
     def setup_console_output(self):
         """Setup stdout reporting output."""
@@ -70,7 +73,9 @@ class Reporter:
             meters_to_print = ['train_loss', 'val_loss', 'train_pck', 'val_pck', 'val_mpjpe']
         else:
             meters_to_print = ['train_loss', 'train_pck']
-        self.telemetry.sink(tele.console.Conf(), [
+        def tqdm_write_fn(step_num, rendered):
+            tqdm.write('[{:3d}/{:3d}] '.format(step_num + 1, self.max_steps) + ', '.join(rendered))
+        self.telemetry.sink(tele.console.Conf(tqdm_write_fn), [
             views.KeyValue([mn]) for mn in meters_to_print
         ])
 
@@ -313,7 +318,7 @@ def sacred_main(_run: Run, seed, showoff, out_dir, batch_size, epochs, tags, mod
     # Reporting
     ####
 
-    reporter = Reporter(with_val=(val_loader is not None))
+    reporter = Reporter(with_val=(val_loader is not None), max_steps=epochs)
 
     reporter.setup_console_output()
     reporter.setup_sacred_output(_run)
@@ -358,9 +363,8 @@ def sacred_main(_run: Run, seed, showoff, out_dir, batch_size, epochs, tags, mod
         with open(path.join(exp_out_dir, 'config.json'), 'w') as f:
             json.dump(tel['config'].value(), f, sort_keys=True, indent=2)
 
-    for epoch in range(epochs):
+    for epoch in trange(epochs, leave=False, ascii=True):
         tel['epoch'].set_value(epoch)
-        print('> Epoch {:3d}/{:3d}'.format(epoch + 1, epochs))
 
         def on_train_progress(samples_processed):
             so_far = epoch * len(train_loader.dataset) + samples_processed

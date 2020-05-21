@@ -20,7 +20,7 @@ torchvision==0.5.0
 tqdm==4.31.1
 tvl[OpenCvBackend]==0.1.0b17
 git+https://github.com/anibali/pyshowoff.git@3396cb916c390886873fb0a6b8515f91c0c1574c#egg=pyshowoff
-git+https://github.com/anibali/tele.git@e2b0af5f28100abd581dbf3871bee90b178a5c98#egg=tele
+git+https://github.com/anibali/tele.git@c5560a5a7c453ab9f9520b8a372656b5eee8e33b#egg=tele
 git+https://github.com/anibali/pose3d-utils@9251f832d9b7aa38e1e5b592965e5f557317ec36#egg=pose3d-utils
 git+https://github.com/anibali/torchdata.git@d52d0c8b9307389eadfba643ec1bb0ef77bc210e#egg=torchdata
 
