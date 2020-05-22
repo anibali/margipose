@@ -19,3 +19,4 @@ __pycache__/
 /out/
 /datasets/
 /docker-compose.yml
+/config.yml
