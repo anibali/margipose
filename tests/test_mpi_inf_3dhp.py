@@ -1,5 +1,6 @@
 import os
 import pytest
+import torch
 from torch.testing import assert_allclose
 
 from margipose.data.mpi_inf_3dhp import MpiInf3dDataset
@@ -33,8 +34,10 @@ def test_mpi3d_example_data(mpi3d_data_dir):
     example = dataset[0]
 
     image = example['input']
-    assert float(image.min()) == pytest.approx(-2.117904, rel=0, abs=1e-2)
-    assert float(image.max()) == pytest.approx(2.428571, rel=0, abs=1e-2)
+    assert float(image.min()) == pytest.approx(-2.117904, rel=0, abs=1e-6)
+    assert float(image.max()) == pytest.approx(2.428571, rel=0, abs=1e-6)
+    assert float(image.mean()) == pytest.approx(-1.097044, rel=0, abs=1e-1)
+    assert_allclose(image[:, 128, 128], torch.as_tensor([-0.2513, 0.2927, -0.1835]), rtol=0, atol=1e-1)
 
     joints = example['target'][..., :3]
     assert_allclose(joints[0], [-0.025768, -0.649297, -0.039933], rtol=0, atol=1e-4)
