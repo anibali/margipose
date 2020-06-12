@@ -27,7 +27,7 @@ def visualise_predictions(preds, batch, dataset):
         preds = torch.cat([preds, torch.ones_like(preds.narrow(-1, 0, 4 - preds.size(-1)))], -1)
     images = []
     for i in range(len(batch['input'])):
-        img = dataset.input_to_pil_image(batch['input'][i])
+        img = dataset.input_to_pil_image(batch['input'].cpu()[i])
         camera_intrinsics = batch['camera_intrinsic'][i]
         skel = dataset.to_image_space(batch['index'][i], preds[i], camera_intrinsics)
         draw_skeleton_2d(img, skel, dataset.skeleton_desc)
