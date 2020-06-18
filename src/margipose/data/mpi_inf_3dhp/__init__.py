@@ -6,7 +6,7 @@ import h5py
 import numpy as np
 import torch
 from PIL import Image, ImageOps
-from pose3d_utils.coords import homogeneous_to_cartesian, ensure_homogeneous
+from pose3d_utils.coords import ensure_homogeneous
 from torchvision.transforms import RandomCrop, RandomHorizontalFlip
 
 from margipose.data import PoseDataset, collate
@@ -290,6 +290,12 @@ class MpiInf3dDataset(PoseDataset):
 
         return sample
 
+    def get_raw_camera_calibration(self, index):
+        frame_ref = self.frame_refs[index]
+        with open(path.join(self.data_dir, frame_ref.camera_file), 'r') as f:
+            cam_cal = parse_camera_calibration(f)[frame_ref.camera_id]
+        return cam_cal
+
     def __getitem__(self, index):
         frame_ref = self.frame_refs[index]
 
@@ -318,8 +324,7 @@ class MpiInf3dDataset(PoseDataset):
                 orig_image = Image.open(path.join(self.data_dir, frame_ref.image_file))
                 img_w, img_h = orig_image.size
 
-        with open(path.join(self.data_dir, frame_ref.camera_file), 'r') as f:
-            cam_cal = parse_camera_calibration(f)[frame_ref.camera_id]
+        cam_cal = self.get_raw_camera_calibration(index)
 
         # Correct the camera to account for the fact that video frames were
         # stored at a lower resolution.
