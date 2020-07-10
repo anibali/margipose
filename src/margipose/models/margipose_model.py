@@ -118,6 +118,14 @@ def make_image_feature_extractor(model_name):
         return net
     elif model_name in {'resnet18', 'resnet34', 'resnet50'}:
         resnet = getattr(torchvision.models, model_name)(pretrained=True)
+        extra_modules = []
+        resnet_out_chans = resnet.layer3[0].conv1.in_channels
+        if resnet_out_chans != 128:
+            extra_modules = [
+                nn.Conv2d(resnet_out_chans, 128, 1),
+                nn.BatchNorm2d(128),
+                nn.ReLU(inplace=True),
+            ]
         net = nn.Sequential(
             resnet.conv1,
             resnet.bn1,
@@ -125,6 +133,7 @@ def make_image_feature_extractor(model_name):
             resnet.maxpool,
             resnet.layer1,
             resnet.layer2,
+            *extra_modules,
         )
         return net
     raise Exception('unsupported image feature extractor model name: ' + model_name)

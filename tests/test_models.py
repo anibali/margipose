@@ -1,10 +1,11 @@
+import pytest
 import torch
 from torch.testing import assert_allclose
 
 from margipose.data.skeleton import CanonicalSkeletonDesc
 from margipose.dsntnn import make_gauss
-from margipose.models.margipose_model import HeatmapColumn, MargiPoseModel
 from margipose.models.chatterbox_model import ChatterboxModel
+from margipose.models.margipose_model import HeatmapColumn, MargiPoseModel
 
 
 def test_columns():
@@ -15,11 +16,12 @@ def test_columns():
     assert n_params_normal == n_params_permuted
 
 
-def test_margipose():
+@pytest.mark.parametrize('feature_extractor', ['inceptionv4', 'resnet18', 'resnet50'])
+def test_margipose(feature_extractor):
     with torch.no_grad():
         in_var = torch.randn(1, 3, 256, 256)
         model = MargiPoseModel(CanonicalSkeletonDesc, n_stages=2, axis_permutation=True,
-                               feature_extractor='inceptionv4', pixelwise_loss='jsd')
+                               feature_extractor=feature_extractor, pixelwise_loss='jsd')
         out_var = model(in_var)
     assert model.xy_heatmaps[-1].size() == torch.Size([1, 17, 32, 32])
     assert out_var.size() == torch.Size([1, 17, 3])
