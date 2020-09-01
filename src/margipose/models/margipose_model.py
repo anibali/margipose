@@ -12,7 +12,7 @@ from margipose.data_specs import DataSpecs, ImageSpecs, JointsSpecs
 
 Default_MargiPose_Desc = {
     'type': 'margipose',
-    'version': '6.0.0',
+    'version': '6.0.1',
     'settings': {
         'n_stages': 4,
         'axis_permutation': True,
@@ -225,8 +225,11 @@ class MargiPoseModel(nn.Module):
         losses = 0
 
         for xy_hm, zy_hm, xz_hm in zip(self.xy_heatmaps, self.zy_heatmaps, self.xz_heatmaps):
+            # Pixelwise heatmap loss.
             losses += self._calculate_pixelwise_loss(xy_hm, target_xy)
-            losses += euclidean_losses(out_var.narrow(-1, 0, 2), target_xy)
+            # Calculated coordinate loss.
+            actual_xy = self.heatmaps_to_coords(xy_hm, zy_hm, xz_hm)[..., :2]
+            losses += euclidean_losses(actual_xy, target_xy)
 
         return losses
 
@@ -238,10 +241,13 @@ class MargiPoseModel(nn.Module):
         target_zy = torch.cat([target_xyz.narrow(-1, 2, 1), target_xyz.narrow(-1, 1, 1)], -1)
         target_xz = torch.cat([target_xyz.narrow(-1, 0, 1), target_xyz.narrow(-1, 2, 1)], -1)
         for xy_hm, zy_hm, xz_hm in zip(self.xy_heatmaps, self.zy_heatmaps, self.xz_heatmaps):
+            # Pixelwise heatmap loss.
             losses += self._calculate_pixelwise_loss(xy_hm, target_xy)
             losses += self._calculate_pixelwise_loss(zy_hm, target_zy)
             losses += self._calculate_pixelwise_loss(xz_hm, target_xz)
-            losses += euclidean_losses(out_var, target_xyz)
+            # Calculated coordinate loss.
+            actual_xyz = self.heatmaps_to_coords(xy_hm, zy_hm, xz_hm)
+            losses += euclidean_losses(actual_xyz, target_xyz)
 
         return losses
 
