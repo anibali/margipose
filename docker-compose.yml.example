@@ -24,3 +24,10 @@ services:
     init: true
     ipc: host
     network_mode: host
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
