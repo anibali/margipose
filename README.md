@@ -112,9 +112,9 @@ Run the project unit tests:
 
 Pretrained models are available for download:
 
-* [margipose-mpi3d.pth](https://cloudstor.aarnet.edu.au/plus/s/fg5CCss8o9PdURs) [221.6 MB]
+* [margipose-mpi3d.pth](https://github.com/anibali/margipose/releases/download/v0.1.0/margipose-mpi3d.pth) [221.6 MB]
   * Trained on MPI-INF-3DHP and MPII examples
-* [margipose-h36m.pth](https://cloudstor.aarnet.edu.au/plus/s/RisOjU8YwqUXFI7) [221.6 MB]
+* [margipose-h36m.pth](https://github.com/anibali/margipose/releases/download/v0.1.0/margipose-h36m.pth) [221.6 MB]
   * Trained on Human3.6M and MPII examples
 
 You can try out the pretrained model like so:
